@@ -1,5 +1,5 @@
-
 import os
+import json
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
@@ -18,13 +18,15 @@ class MoodleClient:
             "User-Agent": (
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
                 "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/139.0.0.0 Safari/537.36"
+                "Chrome/152.0.0.0 Safari/537.36"
             )
         })
 
+        self.sesskey = None
+
     def login(self):
         """
-        Realiza o login no Moodle usando a página de login.
+        Faz login no Moodle e obtém o sesskey da sessão autenticada.
         """
 
         if not self.username or not self.password:
@@ -32,7 +34,10 @@ class MoodleClient:
             return False
 
         try:
-            login_url = urljoin(self.BASE_URL, "/login/index.php")
+            login_url = urljoin(
+                self.BASE_URL,
+                "/login/index.php"
+            )
 
             print("Acessando página de login...")
 
@@ -72,11 +77,11 @@ class MoodleClient:
                 if not name:
                     continue
 
-                value = input_element.get("value", "")
+                data[name] = input_element.get(
+                    "value",
+                    ""
+                )
 
-                data[name] = value
-
-            # Sobrescreve os campos de autenticação.
             data["username"] = self.username
             data["password"] = self.password
 
@@ -91,189 +96,455 @@ class MoodleClient:
 
             login_response.raise_for_status()
 
-            final_url = login_response.url
-
-            # Verificação básica de login.
-            if "/login/" in final_url:
-                soup = BeautifulSoup(
-                    login_response.text,
-                    "html.parser"
-                )
-
-                error = soup.select_one(
-                    ".loginerrors, .alert-danger, .loginerror"
-                )
-
-                if error:
-                    print("❌ Moodle recusou o login.")
-                    return False
-
-                # Se ainda está na página de login,
-                # provavelmente a autenticação falhou.
-                if "login/index.php" in final_url:
-                    print("❌ Login não realizado.")
-                    return False
-
-            # Testamos uma página autenticada.
-            test_response = self.session.get(
-                urljoin(self.BASE_URL, "/my/"),
-                timeout=30
-            )
-
-            test_response.raise_for_status()
-
-            if "login/index.php" in test_response.url:
-                print("❌ Sessão não autenticada.")
+            if "/login/" in login_response.url:
+                print("❌ Login não realizado.")
                 return False
 
+            # A página autenticada normalmente contém
+            # o sesskey usado pelo Moodle nas chamadas AJAX.
+            authenticated_html = login_response.text
+
+            sesskey = self._extract_sesskey(
+                authenticated_html
+            )
+
+            # Caso não encontre nessa resposta,
+            # tenta a página /my/.
+            if not sesskey:
+                my_response = self.session.get(
+                    urljoin(self.BASE_URL, "/my/"),
+                    timeout=30
+                )
+
+                my_response.raise_for_status()
+
+                if "/login/" in my_response.url:
+                    print("❌ Sessão não autenticada.")
+                    return False
+
+                sesskey = self._extract_sesskey(
+                    my_response.text
+                )
+
+            if not sesskey:
+                print("❌ Não foi possível encontrar o sesskey.")
+                return False
+
+            self.sesskey = sesskey
+
             print("✅ Login realizado com sucesso.")
+            print("✅ Sessão Moodle obtida.")
 
             return True
 
         except requests.RequestException as error:
-            print(f"❌ Erro de conexão com o Moodle: {error}")
+            print(
+                f"❌ Erro de conexão com o Moodle: {error}"
+            )
             return False
 
         except Exception as error:
-            print(f"❌ Erro durante o login: {error}")
+            print(
+                f"❌ Erro durante o login: {error}"
+            )
             return False
+
+    def _extract_sesskey(self, html):
+        """
+        Extrai o sesskey do HTML autenticado.
+        """
+
+        soup = BeautifulSoup(
+            html,
+            "html.parser"
+        )
+
+        # Procura elementos que contenham sesskey.
+        for element in soup.find_all(
+            attrs={"data-sesskey": True}
+        ):
+            value = element.get("data-sesskey")
+
+            if value:
+                return value
+
+        # Procura campos hidden.
+        for element in soup.find_all(
+            "input",
+            attrs={"name": "sesskey"}
+        ):
+            value = element.get("value")
+
+            if value:
+                return value
+
+        # Procura scripts/configurações do Moodle.
+        markers = [
+            '"sesskey":"',
+            '"sesskey": "',
+            "'sesskey':'",
+            "'sesskey': '",
+        ]
+
+        for marker in markers:
+            position = html.find(marker)
+
+            if position == -1:
+                continue
+
+            start = position + len(marker)
+
+            end = html.find(
+                '"',
+                start
+            )
+
+            if end == -1:
+                end = html.find(
+                    "'",
+                    start
+                )
+
+            if end == -1:
+                continue
+
+            value = html[start:end]
+
+            if value:
+                return value
+
+        return None
+
+    def _ajax_request(self, methodname, args):
+        """
+        Executa uma chamada AJAX nativa do Moodle.
+        """
+
+        if not self.sesskey:
+            raise RuntimeError(
+                "Sesskey não disponível."
+            )
+
+        url = urljoin(
+            self.BASE_URL,
+            "/lib/ajax/service.php"
+        )
+
+        payload = [
+            {
+                "index": 0,
+                "methodname": methodname,
+                "args": args
+            }
+        ]
+
+        params = {
+            "sesskey": self.sesskey,
+            "info": methodname
+        }
+
+        headers = {
+            "Accept": (
+                "application/json, "
+                "text/javascript, */*; q=0.01"
+            ),
+            "Content-Type": "application/json",
+            "Origin": self.BASE_URL,
+            "Referer": urljoin(
+                self.BASE_URL,
+                "/my/courses.php"
+            ),
+            "X-Requested-With": "XMLHttpRequest"
+        }
+
+        response = self.session.post(
+            url,
+            params=params,
+            json=payload,
+            headers=headers,
+            timeout=30
+        )
+
+        response.raise_for_status()
+
+        try:
+            result = response.json()
+        except ValueError:
+            print("❌ Moodle retornou uma resposta que não é JSON.")
+            print(
+                f"HTTP {response.status_code}"
+            )
+            return None
+
+        return result
 
     def get_courses(self):
         """
-        Obtém as disciplinas disponíveis para o usuário.
+        Busca as disciplinas usando exatamente
+        o método AJAX encontrado no HAR.
         """
 
+        methodname = (
+            "core_course_get_enrolled_courses_by_"
+            "timeline_classification"
+        )
+
+        args = {
+            "offset": 0,
+            "limit": 0,
+            "classification": "allincludinghidden",
+            "sort": "fullname",
+            "customfieldname": "",
+            "customfieldvalue": ""
+        }
+
+        print(
+            "Consultando API AJAX de disciplinas..."
+        )
+
         try:
-            url = urljoin(
-                self.BASE_URL,
-                "/my/"
+            result = self._ajax_request(
+                methodname,
+                args
             )
 
-            response = self.session.get(
-                url,
-                timeout=30
+            if result is None:
+                return []
+
+            # Para facilitar o diagnóstico,
+            # mostramos apenas informações estruturais.
+            print(
+                f"Resposta AJAX recebida: "
+                f"{type(result).__name__}"
             )
 
-            response.raise_for_status()
-
-            soup = BeautifulSoup(
-                response.text,
-                "html.parser"
-            )
+            if not isinstance(result, list):
+                print(
+                    "⚠️ Resposta AJAX inesperada."
+                )
+                return []
 
             courses = []
 
-            # Procuramos links de cursos.
-            for link in soup.find_all("a", href=True):
-
-                href = link["href"]
-
-                if "/course/view.php?id=" not in href:
+            for item in result:
+                if not isinstance(item, dict):
                     continue
 
-                name = link.get_text(
-                    " ",
-                    strip=True
-                )
+                if item.get("error"):
+                    print(
+                        "❌ Moodle informou erro na chamada AJAX."
+                    )
 
-                if not name:
+                    exception = item.get(
+                        "exception",
+                        "Erro desconhecido"
+                    )
+
+                    print(
+                        f"   {exception}"
+                    )
+
+                    message = item.get(
+                        "message"
+                    )
+
+                    if message:
+                        print(
+                            f"   {message}"
+                        )
+
                     continue
 
-                full_url = urljoin(
-                    self.BASE_URL,
-                    href
+                data = item.get(
+                    "data"
                 )
 
-                # Evita duplicados.
-                if any(
-                    course["url"] == full_url
-                    for course in courses
+                if not data:
+                    continue
+
+                if isinstance(data, str):
+                    try:
+                        data = json.loads(data)
+                    except json.JSONDecodeError:
+                        continue
+
+                if not isinstance(data, dict):
+                    continue
+
+                raw_courses = data.get(
+                    "courses",
+                    []
+                )
+
+                if not isinstance(
+                    raw_courses,
+                    list
                 ):
                     continue
 
-                courses.append({
-                    "fullname": name,
-                    "url": full_url
-                })
+                for course in raw_courses:
+                    if not isinstance(
+                        course,
+                        dict
+                    ):
+                        continue
 
-            return courses
+                    course_id = course.get(
+                        "id"
+                    )
+
+                    fullname = course.get(
+                        "fullname"
+                    )
+
+                    if not fullname:
+                        continue
+
+                    course_url = None
+
+                    if course_id:
+                        course_url = (
+                            f"{self.BASE_URL}"
+                            f"/course/view.php?id={course_id}"
+                        )
+
+                    courses.append({
+                        "id": course_id,
+                        "fullname": fullname,
+                        "url": course_url
+                    })
+
+            # Remove duplicados.
+            unique_courses = []
+            seen = set()
+
+            for course in courses:
+                identifier = (
+                    course.get("id"),
+                    course.get("fullname")
+                )
+
+                if identifier in seen:
+                    continue
+
+                seen.add(identifier)
+                unique_courses.append(course)
+
+            return unique_courses
 
         except requests.RequestException as error:
-            print(f"❌ Erro ao buscar disciplinas: {error}")
+            print(
+                f"❌ Erro na API AJAX: {error}"
+            )
             return []
 
         except Exception as error:
-            print(f"❌ Erro ao processar disciplinas: {error}")
+            print(
+                f"❌ Erro ao processar disciplinas: {error}"
+            )
             return []
 
     def get_calendar_events(self):
         """
-        Obtém eventos do calendário do Moodle.
-
-        Esta função será expandida usando os endpoints AJAX
-        identificados no HAR.
+        Busca eventos do calendário através
+        do método AJAX do Moodle encontrado no HAR.
         """
 
+        methodname = (
+            "core_calendar_get_action_events_by_timesort"
+        )
+
+        args = {
+            "timesortfrom": 0,
+            "limitnum": 50,
+            "limittononsuspendedevents": True
+        }
+
+        print(
+            "Consultando API AJAX do calendário..."
+        )
+
         try:
-            url = urljoin(
-                self.BASE_URL,
-                "/calendar/view.php"
+            result = self._ajax_request(
+                methodname,
+                args
             )
 
-            response = self.session.get(
-                url,
-                timeout=30
-            )
-
-            response.raise_for_status()
-
-            soup = BeautifulSoup(
-                response.text,
-                "html.parser"
-            )
+            if result is None:
+                return []
 
             events = []
 
-            # Eventos presentes diretamente no HTML.
-            for event in soup.select(
-                '[data-event-component="mod_assign"]'
-            ):
+            if not isinstance(result, list):
+                return []
 
-                title = event.get(
-                    "data-event-title"
-                )
+            for item in result:
+                if not isinstance(item, dict):
+                    continue
 
-                if not title:
-                    title = event.get_text(
-                        " ",
-                        strip=True
+                if item.get("error"):
+                    print(
+                        "❌ Moodle informou erro "
+                        "ao consultar calendário."
                     )
 
-                link = event.find(
-                    "a",
-                    href=True
-                )
-
-                event_url = None
-
-                if link:
-                    event_url = urljoin(
-                        self.BASE_URL,
-                        link["href"]
+                    message = item.get(
+                        "message"
                     )
 
-                events.append({
-                    "title": title,
-                    "url": event_url,
-                    "component": "mod_assign"
-                })
+                    if message:
+                        print(
+                            f"   {message}"
+                        )
+
+                    continue
+
+                data = item.get(
+                    "data"
+                )
+
+                if not data:
+                    continue
+
+                if isinstance(data, str):
+                    try:
+                        data = json.loads(data)
+                    except json.JSONDecodeError:
+                        continue
+
+                if not isinstance(data, dict):
+                    continue
+
+                raw_events = data.get(
+                    "events",
+                    []
+                )
+
+                if not isinstance(
+                    raw_events,
+                    list
+                ):
+                    continue
+
+                for event in raw_events:
+                    if not isinstance(
+                        event,
+                        dict
+                    ):
+                        continue
+
+                    events.append(event)
 
             return events
 
         except requests.RequestException as error:
-            print(f"❌ Erro ao acessar calendário: {error}")
+            print(
+                f"❌ Erro no calendário AJAX: {error}"
+            )
             return []
 
         except Exception as error:
-            print(f"❌ Erro ao processar calendário: {error}")
+            print(
+                f"❌ Erro ao processar calendário: {error}"
+            )
             return []
