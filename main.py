@@ -12,10 +12,20 @@ def main():
     print("Consultando Moodle...")
     print()
 
+    # =========================================================
+    # LOGIN
+    # =========================================================
+
     if not client.login():
         print()
-        print("❌ Não foi possível acessar o Moodle.")
+        print(
+            "❌ Não foi possível acessar o Moodle."
+        )
         return
+
+    # =========================================================
+    # DISCIPLINAS
+    # =========================================================
 
     print()
     print("Buscando disciplinas...")
@@ -24,11 +34,16 @@ def main():
     cursos = client.get_courses()
 
     print()
-    print(f"📚 Disciplinas encontradas: {len(cursos)}")
+    print(
+        f"📚 Disciplinas encontradas: "
+        f"{len(cursos)}"
+    )
     print()
 
     if cursos:
+
         for curso in cursos:
+
             print(
                 f"- [{curso.get('id')}] "
                 f"{curso.get('fullname')}"
@@ -40,33 +55,46 @@ def main():
                 )
 
             print()
+
     else:
+
         print(
             "⚠️ Nenhuma disciplina encontrada."
         )
 
-    print("Buscando eventos do calendário...")
+    # =========================================================
+    # CALENDÁRIO
+    # =========================================================
+
+    print(
+        "Buscando eventos do calendário..."
+    )
     print()
 
     eventos = client.get_calendar_events()
 
     print()
     print(
-        f"📅 Eventos encontrados: {len(eventos)}"
+        f"📅 Eventos encontrados: "
+        f"{len(eventos)}"
     )
     print()
 
     if eventos:
+
         for evento in eventos:
 
-            name = (
+            nome = (
                 evento.get("name")
                 or evento.get("title")
                 or "Sem nome"
             )
 
-            print(f"- {name}")
+            print(
+                f"- {nome}"
+            )
 
+            # Curso associado
             course = evento.get(
                 "course"
             )
@@ -76,6 +104,7 @@ def main():
                     f"  Curso: {course}"
                 )
 
+            # Data/timestamp
             timestart = evento.get(
                 "timestart"
             )
@@ -85,6 +114,7 @@ def main():
                     f"  Timestamp: {timestart}"
                 )
 
+            # URL
             url = evento.get(
                 "url"
             )
@@ -94,11 +124,27 @@ def main():
                     f"  URL: {url}"
                 )
 
+            # Tipo do módulo
+            modulename = evento.get(
+                "modulename"
+            )
+
+            if modulename:
+                print(
+                    f"  Módulo: {modulename}"
+                )
+
             print()
+
     else:
+
         print(
             "Nenhum evento encontrado."
         )
+
+    # =========================================================
+    # FINAL
+    # =========================================================
 
     print("=" * 50)
     print("       VERIFICAÇÃO CONCLUÍDA")
