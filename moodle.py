@@ -32,12 +32,7 @@ class MoodleClient:
 
         self.sesskey = None
 
-    # ==========================================================
-    # LOGIN
-    # ==========================================================
-
     def login(self):
-
         print("Acessando página de login do Sistema Fiep...")
 
         login_page_url = self.BASE_URL + self.LOGIN_PAGE
@@ -47,14 +42,20 @@ class MoodleClient:
             timeout=30
         )
 
-        print(f"Página de login carregada: HTTP {response.status_code}")
+        print(
+            f"Página de login carregada: "
+            f"HTTP {response.status_code}"
+        )
 
         response.raise_for_status()
 
         print("Enviando autenticação para o Sistema Fiep...")
 
         payload = {
-            "_key": "badiumview.factory.theme.fiep.app.login.service.exec",
+            "_key": (
+                "badiumview.factory.theme.fiep."
+                "app.login.service.exec"
+            ),
             "_operation": "ws",
             "username": self.username,
             "password": self.password,
@@ -75,18 +76,23 @@ class MoodleClient:
             timeout=30
         )
 
-        print(f"Resposta do login: HTTP {response.status_code}")
+        print(
+            f"Resposta do login: "
+            f"HTTP {response.status_code}"
+        )
 
         response.raise_for_status()
 
         try:
             data = response.json()
+
         except Exception:
             raise RuntimeError(
                 "A resposta do login não retornou JSON válido."
             )
 
         if data.get("status") != "accept":
+
             raise RuntimeError(
                 f"Login recusado pelo Sistema Fiep: {data}"
             )
@@ -108,17 +114,22 @@ class MoodleClient:
         )
 
         print(
-            f"Página autenticada: HTTP "
-            f"{authenticated.status_code}"
+            f"Página autenticada: "
+            f"HTTP {authenticated.status_code}"
         )
 
         authenticated.raise_for_status()
 
-        print(f"URL final: {authenticated.url}")
+        print(
+            f"URL final: "
+            f"{authenticated.url}"
+        )
 
         if "/my/" not in authenticated.url:
+
             raise RuntimeError(
-                "O redirecionamento não chegou à página autenticada do Moodle."
+                "O redirecionamento não chegou à "
+                "página autenticada do Moodle."
             )
 
         print("✅ Sessão Moodle autenticada.")
@@ -128,6 +139,7 @@ class MoodleClient:
         )
 
         if not self.sesskey:
+
             raise RuntimeError(
                 "Não foi possível encontrar o sesskey."
             )
@@ -135,10 +147,6 @@ class MoodleClient:
         print("✅ Sesskey encontrado.")
 
         return True
-
-    # ==========================================================
-    # EXTRAIR SESSKEY
-    # ==========================================================
 
     def _extract_sesskey(self, html):
 
@@ -174,17 +182,21 @@ class MoodleClient:
         )
 
         if input_element:
-            return input_element.get("value")
+
+            return input_element.get(
+                "value"
+            )
 
         return None
 
-    # ==========================================================
-    # AJAX MOODLE
-    # ==========================================================
-
-    def _ajax_request(self, methodname, args):
+    def _ajax_request(
+        self,
+        methodname,
+        args
+    ):
 
         if not self.sesskey:
+
             raise RuntimeError(
                 "Sesskey não disponível."
             )
@@ -219,6 +231,7 @@ class MoodleClient:
         data = response.json()
 
         if not isinstance(data, list) or not data:
+
             raise RuntimeError(
                 f"Resposta inesperada do Moodle: {data}"
             )
@@ -226,20 +239,18 @@ class MoodleClient:
         result = data[0]
 
         if result.get("error"):
+
             raise RuntimeError(
                 f"Erro no Moodle: {result}"
             )
 
         return result.get("data")
 
-    # ==========================================================
-    # DISCIPLINAS
-    # ==========================================================
-
     def get_courses(self):
 
         methodname = (
-            "core_course_get_enrolled_courses_by_timeline_classification"
+            "core_course_get_enrolled_courses_by_"
+            "timeline_classification"
         )
 
         args = {
@@ -263,10 +274,6 @@ class MoodleClient:
             "courses",
             []
         )
-
-    # ==========================================================
-    # EVENTOS
-    # ==========================================================
 
     def get_calendar_events(self):
 
@@ -293,10 +300,6 @@ class MoodleClient:
             []
         )
 
-    # ==========================================================
-    # PREPARAR EVENTOS
-    # ==========================================================
-
     def get_normalized_events(self):
 
         events = self.get_calendar_events()
@@ -313,11 +316,30 @@ class MoodleClient:
                 or "Evento sem nome"
             )
 
-            course_name = (
-                event.get("course")
-                or event.get("coursename")
-                or ""
-            )
+            # O Moodle pode retornar o curso
+            # como um objeto/dicionário.
+            course = event.get("course")
+
+            if isinstance(course, dict):
+
+                course_id = course.get("id")
+
+                course_name = (
+                    course.get("fullname")
+                    or course.get("fullnamedisplay")
+                    or course.get("shortname")
+                    or ""
+                )
+
+            else:
+
+                course_id = None
+
+                course_name = (
+                    event.get("coursename")
+                    or course
+                    or ""
+                )
 
             timestart = event.get(
                 "timestart"
@@ -341,9 +363,14 @@ class MoodleClient:
             )
 
             normalized_event = {
-                "id": str(event_id) if event_id else "",
+                "id": (
+                    str(event_id)
+                    if event_id
+                    else ""
+                ),
                 "nome": name,
                 "disciplina": course_name,
+                "curso_id": course_id,
                 "timestamp": timestart,
                 "timesort": timesort,
                 "tipo": event_type,
@@ -355,10 +382,6 @@ class MoodleClient:
             )
 
         return normalized
-
-    # ==========================================================
-    # TESTE COMPLETO
-    # ==========================================================
 
     def test(self):
 
@@ -373,11 +396,9 @@ class MoodleClient:
         self.login()
 
         print()
-        print("Moodle autenticado com sucesso.")
-
-        # ------------------------------------------------------
-        # CURSOS
-        # ------------------------------------------------------
+        print(
+            "Moodle autenticado com sucesso."
+        )
 
         print()
         print("Consultando disciplinas...")
@@ -412,12 +433,10 @@ class MoodleClient:
                 f" | ID: {course_id}"
             )
 
-        # ------------------------------------------------------
-        # EVENTOS
-        # ------------------------------------------------------
-
         print()
-        print("Consultando eventos do calendário...")
+        print(
+            "Consultando eventos do calendário..."
+        )
 
         events = self.get_normalized_events()
 
@@ -434,12 +453,18 @@ class MoodleClient:
             )
 
             print(
-                f"      ID: {event['id']}"
+                f"      ID: "
+                f"{event['id']}"
             )
 
             print(
                 f"      Disciplina: "
                 f"{event['disciplina'] or 'Não identificada'}"
+            )
+
+            print(
+                f"      Curso ID: "
+                f"{event['curso_id'] or 'Não identificado'}"
             )
 
             print(
@@ -453,6 +478,7 @@ class MoodleClient:
             )
 
             if event["url"]:
+
                 print(
                     f"      URL: "
                     f"{event['url']}"
