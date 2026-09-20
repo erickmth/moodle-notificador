@@ -1,6 +1,4 @@
-import os
 import re
-import json
 import requests
 from bs4 import BeautifulSoup
 
@@ -17,16 +15,9 @@ class MoodleClient:
 
     LOGIN_SERVICE = "/theme/badiumview/controller.php"
 
-    def __init__(self, username=None, password=None):
-
-        self.username = username or os.getenv("MOODLE_USER")
-        self.password = password or os.getenv("MOODLE_PASSWORD")
-
-        if not self.username:
-            raise ValueError("MOODLE_USER não foi informado.")
-
-        if not self.password:
-            raise ValueError("MOODLE_PASSWORD não foi informado.")
+    def __init__(self, username, password):
+        self.username = username
+        self.password = password
 
         self.session = requests.Session()
 
@@ -36,7 +27,7 @@ class MoodleClient:
                 "AppleWebKit/537.36 (KHTML, like Gecko) "
                 "Chrome/153.0.0.0 Safari/537.36"
             ),
-            "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
+            "Accept-Language": "pt-BR,pt;q=0.9,en;q=0.8",
         })
 
         self.sesskey = None
@@ -47,7 +38,7 @@ class MoodleClient:
 
     def login(self):
 
-        print("\nAcessando página de login do Sistema Fiep...")
+        print("Acessando página de login do Sistema Fiep...")
 
         login_page_url = self.BASE_URL + self.LOGIN_PAGE
 
@@ -58,22 +49,9 @@ class MoodleClient:
 
         print(f"Página de login carregada: HTTP {response.status_code}")
 
-        if response.status_code != 200:
-            print("❌ Não foi possível carregar a página de login.")
-            return False
+        response.raise_for_status()
 
-        # ------------------------------------------------------
-        # O AVA usa a camada BadiumView do Sistema Fiep.
-        #
-        # O JavaScript real do site envia:
-        #
-        # {
-        #   "_key": "badiumview.factory.theme.fiep.app.login.service.exec",
-        #   "_operation": "ws",
-        #   "username": "...",
-        #   "password": "..."
-        # }
-        # ------------------------------------------------------
+        print("Enviando autenticação para o Sistema Fiep...")
 
         payload = {
             "_key": "badiumview.factory.theme.fiep.app.login.service.exec",
@@ -82,129 +60,94 @@ class MoodleClient:
             "password": self.password,
         }
 
-        print("Enviando autenticação para o Sistema Fiep...")
+        headers = {
+            "Accept": "application/json, text/plain, */*",
+            "Content-Type": "application/json",
+            "Origin": self.BASE_URL,
+            "Referer": login_page_url,
+            "X-Requested-With": "XMLHttpRequest",
+        }
 
         response = self.session.post(
             self.BASE_URL + self.LOGIN_SERVICE,
             json=payload,
-            headers={
-                "Accept": "application/json, text/plain, */*",
-                "Content-Type": "application/json",
-                "Origin": self.BASE_URL,
-                "Referer": login_page_url,
-                "X-Requested-With": "XMLHttpRequest",
-            },
-            timeout=30,
+            headers=headers,
+            timeout=30
         )
 
         print(f"Resposta do login: HTTP {response.status_code}")
 
-        if response.status_code != 200:
-            print("❌ O servidor recusou a requisição de login.")
-            print(f"URL: {response.url}")
-            return False
+        response.raise_for_status()
 
         try:
             data = response.json()
-        except ValueError:
-            print("❌ A resposta do login não é um JSON válido.")
-            print(response.text[:500])
-            return False
+        except Exception:
+            raise RuntimeError(
+                "A resposta do login não retornou JSON válido."
+            )
 
-        status = data.get("status")
-
-        if status != "accept":
-
-            print("❌ Login não aceito pelo Sistema Fiep.")
-
-            message = data.get("message")
-
-            if isinstance(message, dict):
-                message = message.get("error") or message
-
-            if message:
-                print(f"Mensagem do servidor: {message}")
-
-            return False
+        if data.get("status") != "accept":
+            raise RuntimeError(
+                f"Login recusado pelo Sistema Fiep: {data}"
+            )
 
         print("✅ Login aceito pelo Sistema Fiep.")
 
-        message = data.get("message", {})
+        message = data.get("message") or {}
 
-        if isinstance(message, dict):
-            urlgoback = message.get("urlgoback")
-        else:
-            urlgoback = None
-
-        if not urlgoback:
-            urlgoback = self.BASE_URL + "/my/"
+        urlgoback = message.get(
+            "urlgoback",
+            self.BASE_URL + "/my/"
+        )
 
         print("Redirecionando para o Moodle...")
 
-        authenticated_response = self.session.get(
+        authenticated = self.session.get(
             urlgoback,
-            timeout=30,
-            allow_redirects=True,
+            timeout=30
         )
 
         print(
             f"Página autenticada: HTTP "
-            f"{authenticated_response.status_code}"
+            f"{authenticated.status_code}"
         )
 
-        print(f"URL final: {authenticated_response.url}")
+        authenticated.raise_for_status()
 
-        if authenticated_response.status_code != 200:
-            print("❌ Não foi possível acessar o Moodle autenticado.")
-            return False
+        print(f"URL final: {authenticated.url}")
 
-        # ------------------------------------------------------
-        # Agora precisamos encontrar o sesskey da sessão Moodle.
-        # ------------------------------------------------------
-
-        html = authenticated_response.text
-
-        self.sesskey = self._extract_sesskey(html)
-
-        if not self.sesskey:
-
-            print("❌ Login ocorreu, mas o sesskey não foi encontrado.")
-            print("Isso significa que a sessão Moodle ainda não está disponível.")
-
-            return False
+        if "/my/" not in authenticated.url:
+            raise RuntimeError(
+                "O redirecionamento não chegou à página autenticada do Moodle."
+            )
 
         print("✅ Sessão Moodle autenticada.")
+
+        self.sesskey = self._extract_sesskey(
+            authenticated.text
+        )
+
+        if not self.sesskey:
+            raise RuntimeError(
+                "Não foi possível encontrar o sesskey."
+            )
+
         print("✅ Sesskey encontrado.")
 
         return True
 
     # ==========================================================
-    # EXTRAÇÃO DO SESSKEY
+    # EXTRAIR SESSKEY
     # ==========================================================
 
     def _extract_sesskey(self, html):
 
-        if not html:
-            return None
-
-        # ------------------------------------------------------
-        # Formatos comuns do Moodle
-        # ------------------------------------------------------
-
         patterns = [
-
-            r'M\.cfg\.sesskey\s*=\s*["\']([^"\']+)["\']',
-
+            r'M\.cfg\.sesskey\s*=\s*[\'"]([^\'"]+)',
             r'"sesskey"\s*:\s*"([^"]+)"',
-
             r"'sesskey'\s*:\s*'([^']+)'",
-
-            r'name=["\']sesskey["\']\s+value=["\']([^"\']+)["\']',
-
-            r'name=["\']sesskey["\'][^>]+value=["\']([^"\']+)["\']',
-
-            r'[?&]sesskey=([A-Za-z0-9]+)',
-
+            r'name=["\']sesskey["\']\s+value=["\']([^"\']+)',
+            r'sesskey=([^&"\']+)',
         ]
 
         for pattern in patterns:
@@ -216,50 +159,34 @@ class MoodleClient:
             )
 
             if match:
+                return match.group(1)
 
-                sesskey = match.group(1)
+        soup = BeautifulSoup(
+            html,
+            "html.parser"
+        )
 
-                if sesskey:
-                    return sesskey
+        input_element = soup.find(
+            "input",
+            {
+                "name": "sesskey"
+            }
+        )
 
-        # ------------------------------------------------------
-        # Tentativa adicional utilizando BeautifulSoup
-        # ------------------------------------------------------
-
-        try:
-
-            soup = BeautifulSoup(
-                html,
-                "html.parser"
-            )
-
-            # Inputs
-            for element in soup.find_all(
-                "input",
-                attrs={"name": "sesskey"}
-            ):
-
-                value = element.get("value")
-
-                if value:
-                    return value
-
-        except Exception:
-            pass
+        if input_element:
+            return input_element.get("value")
 
         return None
 
     # ==========================================================
-    # REQUISIÇÃO AJAX DO MOODLE
+    # AJAX MOODLE
     # ==========================================================
 
     def _ajax_request(self, methodname, args):
 
         if not self.sesskey:
-
             raise RuntimeError(
-                "Sesskey não disponível. "
-                "Faça login antes de chamar o Moodle."
+                "Sesskey não disponível."
             )
 
         url = (
@@ -280,58 +207,27 @@ class MoodleClient:
             url,
             json=payload,
             headers={
-                "Accept": "application/json, text/javascript, */*; q=0.01",
+                "Accept": "application/json",
                 "Content-Type": "application/json",
-                "Origin": self.BASE_URL,
-                "Referer": self.BASE_URL + "/my/",
                 "X-Requested-With": "XMLHttpRequest",
             },
-            timeout=30,
+            timeout=30
         )
 
-        if response.status_code != 200:
+        response.raise_for_status()
 
-            raise RuntimeError(
-                f"Moodle AJAX retornou HTTP {response.status_code}"
-            )
-
-        try:
-            data = response.json()
-
-        except ValueError:
-
-            raise RuntimeError(
-                "Resposta do Moodle AJAX não é JSON válido."
-            )
-
-        # ------------------------------------------------------
-        # Moodle normalmente retorna uma lista:
-        #
-        # [
-        #   {
-        #       "error": false,
-        #       "data": ...
-        #   }
-        # ]
-        # ------------------------------------------------------
+        data = response.json()
 
         if not isinstance(data, list) or not data:
-
             raise RuntimeError(
-                "Resposta inesperada do Moodle AJAX."
+                f"Resposta inesperada do Moodle: {data}"
             )
 
         result = data[0]
 
         if result.get("error"):
-
-            message = result.get(
-                "exception",
-                "Erro desconhecido"
-            )
-
             raise RuntimeError(
-                f"Moodle AJAX: {message}"
+                f"Erro no Moodle: {result}"
             )
 
         return result.get("data")
@@ -342,7 +238,9 @@ class MoodleClient:
 
     def get_courses(self):
 
-        print("\nConsultando disciplinas...")
+        methodname = (
+            "core_course_get_enrolled_courses_by_timeline_classification"
+        )
 
         args = {
             "offset": 0,
@@ -354,47 +252,27 @@ class MoodleClient:
         }
 
         data = self._ajax_request(
-            "core_course_get_enrolled_courses_by_timeline_classification",
+            methodname,
             args
         )
 
         if not data:
-
-            print("⚠️ Nenhuma disciplina encontrada.")
             return []
 
-        courses = []
-
-        # ------------------------------------------------------
-        # Moodle pode devolver estrutura com courses
-        # ------------------------------------------------------
-
-        if isinstance(data, dict):
-
-            if "courses" in data:
-                courses = data["courses"]
-
-            elif "items" in data:
-                courses = data["items"]
-
-        elif isinstance(data, list):
-
-            courses = data
-
-        print(
-            f"📚 Disciplinas encontradas: "
-            f"{len(courses)}"
+        return data.get(
+            "courses",
+            []
         )
 
-        return courses
-
     # ==========================================================
-    # EVENTOS DO CALENDÁRIO
+    # EVENTOS
     # ==========================================================
 
     def get_calendar_events(self):
 
-        print("\nConsultando eventos do calendário...")
+        methodname = (
+            "core_calendar_get_action_events_by_timesort"
+        )
 
         args = {
             "timesortfrom": 0,
@@ -403,35 +281,80 @@ class MoodleClient:
         }
 
         data = self._ajax_request(
-            "core_calendar_get_action_events_by_timesort",
+            methodname,
             args
         )
 
         if not data:
-
-            print("📅 Eventos encontrados: 0")
             return []
 
-        events = []
-
-        if isinstance(data, dict):
-
-            if "events" in data:
-                events = data["events"]
-
-            elif "items" in data:
-                events = data["items"]
-
-        elif isinstance(data, list):
-
-            events = data
-
-        print(
-            f"📅 Eventos encontrados: "
-            f"{len(events)}"
+        return data.get(
+            "events",
+            []
         )
 
-        return events
+    # ==========================================================
+    # PREPARAR EVENTOS
+    # ==========================================================
+
+    def get_normalized_events(self):
+
+        events = self.get_calendar_events()
+
+        normalized = []
+
+        for event in events:
+
+            event_id = event.get("id")
+
+            name = (
+                event.get("name")
+                or event.get("formattedtime")
+                or "Evento sem nome"
+            )
+
+            course_name = (
+                event.get("course")
+                or event.get("coursename")
+                or ""
+            )
+
+            timestart = event.get(
+                "timestart"
+            )
+
+            timesort = event.get(
+                "timesort"
+            )
+
+            url = (
+                event.get("url")
+                or event.get("urltoevent")
+                or ""
+            )
+
+            event_type = (
+                event.get("eventtype")
+                or event.get("modulename")
+                or event.get("component")
+                or ""
+            )
+
+            normalized_event = {
+                "id": str(event_id) if event_id else "",
+                "nome": name,
+                "disciplina": course_name,
+                "timestamp": timestart,
+                "timesort": timesort,
+                "tipo": event_type,
+                "url": url,
+            }
+
+            normalized.append(
+                normalized_event
+            )
+
+        return normalized
 
     # ==========================================================
     # TESTE COMPLETO
@@ -439,84 +362,103 @@ class MoodleClient:
 
     def test(self):
 
+        print()
         print("=" * 50)
         print("          NOTIFICADOR MOODLE")
         print("=" * 50)
 
-        print("\nConsultando Moodle...")
+        print()
+        print("Consultando Moodle...")
 
-        if not self.login():
+        self.login()
 
-            print("\n❌ Não foi possível acessar o Moodle.")
-            return False
-
-        print("\nMoodle autenticado com sucesso.")
+        print()
+        print("Moodle autenticado com sucesso.")
 
         # ------------------------------------------------------
-        # Disciplinas
+        # CURSOS
         # ------------------------------------------------------
 
-        try:
+        print()
+        print("Consultando disciplinas...")
 
-            courses = self.get_courses()
+        courses = self.get_courses()
 
-            for course in courses:
+        print(
+            f"📚 Disciplinas encontradas: "
+            f"{len(courses)}"
+        )
 
-                if not isinstance(course, dict):
-                    continue
+        for course in courses:
 
-                fullname = course.get(
-                    "fullname",
-                    "Disciplina sem nome"
-                )
+            fullname = course.get(
+                "fullname",
+                "Sem nome"
+            )
 
-                course_id = course.get(
-                    "id",
-                    "?"
-                )
+            shortname = course.get(
+                "shortname",
+                ""
+            )
 
-                print(
-                    f"   • {fullname} "
-                    f"(ID: {course_id})"
-                )
-
-        except Exception as e:
+            course_id = course.get(
+                "id",
+                ""
+            )
 
             print(
-                f"❌ Erro ao consultar disciplinas: {e}"
+                f"   • {fullname}"
+                f" | {shortname}"
+                f" | ID: {course_id}"
             )
 
         # ------------------------------------------------------
-        # Eventos
+        # EVENTOS
         # ------------------------------------------------------
 
-        try:
+        print()
+        print("Consultando eventos do calendário...")
 
-            events = self.get_calendar_events()
+        events = self.get_normalized_events()
 
-            for event in events:
+        print(
+            f"📅 Eventos encontrados: "
+            f"{len(events)}"
+        )
 
-                if not isinstance(event, dict):
-                    continue
+        for event in events:
 
-                name = (
-                    event.get("name")
-                    or event.get("title")
-                    or "Evento sem nome"
-                )
-
-                print(
-                    f"   • {name}"
-                )
-
-        except Exception as e:
-
+            print()
             print(
-                f"❌ Erro ao consultar calendário: {e}"
+                f"   📝 {event['nome']}"
             )
 
-        print("\n" + "=" * 50)
+            print(
+                f"      ID: {event['id']}"
+            )
+
+            print(
+                f"      Disciplina: "
+                f"{event['disciplina'] or 'Não identificada'}"
+            )
+
+            print(
+                f"      Tipo: "
+                f"{event['tipo'] or 'Não identificado'}"
+            )
+
+            print(
+                f"      Timestamp: "
+                f"{event['timestamp']}"
+            )
+
+            if event["url"]:
+                print(
+                    f"      URL: "
+                    f"{event['url']}"
+                )
+
+        print()
+        print("=" * 50)
         print("Fim da verificação.")
         print("=" * 50)
-
-        return True
