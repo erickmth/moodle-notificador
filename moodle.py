@@ -1,5 +1,6 @@
 import os
 import json
+import re
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
@@ -18,7 +19,10 @@ class MoodleClient:
             "User-Agent": (
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
                 "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/152.0.0.0 Safari/537.36"
+                "Chrome/153.0.0.0 Safari/537.36"
+            ),
+            "Accept-Language": (
+                "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7"
             )
         })
 
@@ -26,11 +30,15 @@ class MoodleClient:
 
     def login(self):
         """
-        Faz login no Moodle e obtém o sesskey da sessão autenticada.
+        Realiza o login no Moodle e extrai o sesskey
+        da página autenticada.
         """
 
         if not self.username or not self.password:
-            print("❌ MOODLE_USER ou MOODLE_PASSWORD não configurados.")
+            print(
+                "❌ MOODLE_USER ou MOODLE_PASSWORD "
+                "não configurados."
+            )
             return False
 
         try:
@@ -56,7 +64,9 @@ class MoodleClient:
             login_form = soup.find("form")
 
             if not login_form:
-                print("❌ Formulário de login não encontrado.")
+                print(
+                    "❌ Formulário de login não encontrado."
+                )
                 return False
 
             login_action = login_form.get("action")
@@ -71,7 +81,9 @@ class MoodleClient:
 
             data = {}
 
-            for input_element in login_form.find_all("input"):
+            for input_element in login_form.find_all(
+                "input"
+            ):
                 name = input_element.get("name")
 
                 if not name:
@@ -96,44 +108,64 @@ class MoodleClient:
 
             login_response.raise_for_status()
 
+            # Se o Moodle ainda redirecionou para o login,
+            # a autenticação não foi concluída.
             if "/login/" in login_response.url:
-                print("❌ Login não realizado.")
+                print(
+                    "❌ Login não realizado."
+                )
                 return False
 
-            # A página autenticada normalmente contém
-            # o sesskey usado pelo Moodle nas chamadas AJAX.
-            authenticated_html = login_response.text
-
-            sesskey = self._extract_sesskey(
-                authenticated_html
+            # A resposta do login normalmente já é uma
+            # página autenticada e contém M.cfg.sesskey.
+            self.sesskey = self._extract_sesskey(
+                login_response.text
             )
 
-            # Caso não encontre nessa resposta,
-            # tenta a página /my/.
-            if not sesskey:
+            # Caso a resposta do login não contenha o sesskey,
+            # acessamos /my/ e procuramos novamente.
+            if not self.sesskey:
+
+                my_url = urljoin(
+                    self.BASE_URL,
+                    "/my/"
+                )
+
+                print(
+                    "Sesskey não encontrado na resposta "
+                    "do login. Acessando página autenticada..."
+                )
+
                 my_response = self.session.get(
-                    urljoin(self.BASE_URL, "/my/"),
+                    my_url,
                     timeout=30
                 )
 
                 my_response.raise_for_status()
 
                 if "/login/" in my_response.url:
-                    print("❌ Sessão não autenticada.")
+                    print(
+                        "❌ Sessão não autenticada."
+                    )
                     return False
 
-                sesskey = self._extract_sesskey(
+                self.sesskey = self._extract_sesskey(
                     my_response.text
                 )
 
-            if not sesskey:
-                print("❌ Não foi possível encontrar o sesskey.")
+            if not self.sesskey:
+                print(
+                    "❌ Não foi possível encontrar o sesskey."
+                )
                 return False
 
-            self.sesskey = sesskey
+            print(
+                "✅ Login realizado com sucesso."
+            )
 
-            print("✅ Login realizado com sucesso.")
-            print("✅ Sessão Moodle obtida.")
+            print(
+                "✅ Sessão Moodle obtida."
+            )
 
             return True
 
@@ -151,73 +183,78 @@ class MoodleClient:
 
     def _extract_sesskey(self, html):
         """
-        Extrai o sesskey do HTML autenticado.
+        Extrai M.cfg.sesskey do HTML do Moodle.
+
+        O HAR mostra que o Moodle disponibiliza o valor
+        dentro de:
+
+        M.cfg = {..., "sesskey":"...", ...}
         """
 
+        if not html:
+            return None
+
+        # Forma principal observada no HAR.
+        patterns = [
+            r'M\.cfg\s*=\s*\{.*?"sesskey"\s*:\s*"([^"]+)"',
+            r'"sesskey"\s*:\s*"([^"]+)"',
+            r"'sesskey'\s*:\s*'([^']+)'",
+        ]
+
+        for pattern in patterns:
+            match = re.search(
+                pattern,
+                html,
+                re.DOTALL
+            )
+
+            if match:
+                value = match.group(1)
+
+                if value:
+                    return value
+
+        # Algumas páginas podem carregar o valor
+        # através de atributos HTML.
         soup = BeautifulSoup(
             html,
             "html.parser"
         )
 
-        # Procura elementos que contenham sesskey.
         for element in soup.find_all(
             attrs={"data-sesskey": True}
         ):
-            value = element.get("data-sesskey")
-
-            if value:
-                return value
-
-        # Procura campos hidden.
-        for element in soup.find_all(
-            "input",
-            attrs={"name": "sesskey"}
-        ):
-            value = element.get("value")
-
-            if value:
-                return value
-
-        # Procura scripts/configurações do Moodle.
-        markers = [
-            '"sesskey":"',
-            '"sesskey": "',
-            "'sesskey':'",
-            "'sesskey': '",
-        ]
-
-        for marker in markers:
-            position = html.find(marker)
-
-            if position == -1:
-                continue
-
-            start = position + len(marker)
-
-            end = html.find(
-                '"',
-                start
+            value = element.get(
+                "data-sesskey"
             )
 
-            if end == -1:
-                end = html.find(
-                    "'",
-                    start
-                )
+            if value:
+                return value
 
-            if end == -1:
-                continue
+        # Campo hidden como fallback.
+        element = soup.find(
+            "input",
+            attrs={"name": "sesskey"}
+        )
 
-            value = html[start:end]
+        if element:
+            value = element.get("value")
 
             if value:
                 return value
 
         return None
 
-    def _ajax_request(self, methodname, args):
+    def _ajax_request(
+        self,
+        methodname,
+        args
+    ):
         """
-        Executa uma chamada AJAX nativa do Moodle.
+        Executa uma chamada AJAX do Moodle.
+
+        Endpoint identificado no HAR:
+        /lib/ajax/service.php
         """
 
         if not self.sesskey:
@@ -268,20 +305,27 @@ class MoodleClient:
         response.raise_for_status()
 
         try:
-            result = response.json()
+            return response.json()
+
         except ValueError:
-            print("❌ Moodle retornou uma resposta que não é JSON.")
+            print(
+                "❌ Moodle retornou uma resposta "
+                "que não é JSON."
+            )
+
             print(
                 f"HTTP {response.status_code}"
             )
-            return None
 
-        return result
+            return None
 
     def get_courses(self):
         """
-        Busca as disciplinas usando exatamente
-        o método AJAX encontrado no HAR.
+        Busca as disciplinas através do método AJAX
+        utilizado pelo próprio Moodle.
+
+        Método identificado no HAR:
+        core_course_get_enrolled_courses_by_timeline_classification
         """
 
         methodname = (
@@ -311,13 +355,6 @@ class MoodleClient:
             if result is None:
                 return []
 
-            # Para facilitar o diagnóstico,
-            # mostramos apenas informações estruturais.
-            print(
-                f"Resposta AJAX recebida: "
-                f"{type(result).__name__}"
-            )
-
             if not isinstance(result, list):
                 print(
                     "⚠️ Resposta AJAX inesperada."
@@ -327,48 +364,59 @@ class MoodleClient:
             courses = []
 
             for item in result:
-                if not isinstance(item, dict):
+
+                if not isinstance(
+                    item,
+                    dict
+                ):
                     continue
 
                 if item.get("error"):
+
                     print(
-                        "❌ Moodle informou erro na chamada AJAX."
+                        "❌ Moodle retornou erro "
+                        "na consulta de disciplinas."
                     )
 
                     exception = item.get(
-                        "exception",
-                        "Erro desconhecido"
-                    )
-
-                    print(
-                        f"   {exception}"
+                        "exception"
                     )
 
                     message = item.get(
                         "message"
                     )
 
+                    if exception:
+                        print(
+                            f"   Exceção: {exception}"
+                        )
+
                     if message:
                         print(
-                            f"   {message}"
+                            f"   Mensagem: {message}"
                         )
 
                     continue
 
-                data = item.get(
-                    "data"
-                )
+                data = item.get("data")
 
                 if not data:
                     continue
 
-                if isinstance(data, str):
+                if isinstance(
+                    data,
+                    str
+                ):
                     try:
                         data = json.loads(data)
+
                     except json.JSONDecodeError:
                         continue
 
-                if not isinstance(data, dict):
+                if not isinstance(
+                    data,
+                    dict
+                ):
                     continue
 
                 raw_courses = data.get(
@@ -383,6 +431,7 @@ class MoodleClient:
                     continue
 
                 for course in raw_courses:
+
                     if not isinstance(
                         course,
                         dict
@@ -405,7 +454,8 @@ class MoodleClient:
                     if course_id:
                         course_url = (
                             f"{self.BASE_URL}"
-                            f"/course/view.php?id={course_id}"
+                            f"/course/view.php?id="
+                            f"{course_id}"
                         )
 
                     courses.append({
@@ -419,6 +469,7 @@ class MoodleClient:
             seen = set()
 
             for course in courses:
+
                 identifier = (
                     course.get("id"),
                     course.get("fullname")
@@ -428,7 +479,10 @@ class MoodleClient:
                     continue
 
                 seen.add(identifier)
-                unique_courses.append(course)
+
+                unique_courses.append(
+                    course
+                )
 
             return unique_courses
 
@@ -446,8 +500,11 @@ class MoodleClient:
 
     def get_calendar_events(self):
         """
-        Busca eventos do calendário através
-        do método AJAX do Moodle encontrado no HAR.
+        Busca eventos do calendário através do AJAX
+        do Moodle.
+
+        Método identificado no HAR:
+        core_calendar_get_action_events_by_timesort
         """
 
         methodname = (
@@ -473,28 +530,45 @@ class MoodleClient:
             if result is None:
                 return []
 
-            events = []
-
-            if not isinstance(result, list):
+            if not isinstance(
+                result,
+                list
+            ):
                 return []
 
+            events = []
+
             for item in result:
-                if not isinstance(item, dict):
+
+                if not isinstance(
+                    item,
+                    dict
+                ):
                     continue
 
                 if item.get("error"):
+
                     print(
-                        "❌ Moodle informou erro "
+                        "❌ Moodle retornou erro "
                         "ao consultar calendário."
+                    )
+
+                    exception = item.get(
+                        "exception"
                     )
 
                     message = item.get(
                         "message"
                     )
 
+                    if exception:
+                        print(
+                            f"   Exceção: {exception}"
+                        )
+
                     if message:
                         print(
-                            f"   {message}"
+                            f"   Mensagem: {message}"
                         )
 
                     continue
@@ -506,13 +580,20 @@ class MoodleClient:
                 if not data:
                     continue
 
-                if isinstance(data, str):
+                if isinstance(
+                    data,
+                    str
+                ):
                     try:
                         data = json.loads(data)
+
                     except json.JSONDecodeError:
                         continue
 
-                if not isinstance(data, dict):
+                if not isinstance(
+                    data,
+                    dict
+                ):
                     continue
 
                 raw_events = data.get(
@@ -527,13 +608,16 @@ class MoodleClient:
                     continue
 
                 for event in raw_events:
+
                     if not isinstance(
                         event,
                         dict
                     ):
                         continue
 
-                    events.append(event)
+                    events.append(
+                        event
+                    )
 
             return events
 
