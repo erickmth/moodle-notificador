@@ -38,5 +38,25 @@
     "timesort": 1790823600,
     "tipo": "due",
     "url": "https://ava.fiep.digital/mod/assign/view.php?id=1294653"
+  },
+  {
+    "id": "1881973",
+    "nome": "Pré-banca 1 - texto parcial do artigo está marcado(a) para esta data",
+    "disciplina": "Jornada de Aprendizagem - Tecnologia e Sistemas | 2026/2 | Gerencial | GRB.00007",
+    "curso_id": 40025,
+    "timestamp": 1790132340,
+    "timesort": 1790132340,
+    "tipo": "due",
+    "url": "https://ava.fiep.digital/mod/assign/view.php?id=1298240"
+  },
+  {
+    "id": "1881975",
+    "nome": "Pré-banca 1 - texto parcial do artigo deve estar concluído",
+    "disciplina": "Jornada de Aprendizagem - Tecnologia e Sistemas | 2026/2 | Gerencial | GRB.00007",
+    "curso_id": 40025,
+    "timestamp": 1790132340,
+    "timesort": 1790132340,
+    "tipo": "expectcompletionon",
+    "url": "https://ava.fiep.digital/mod/assign/view.php?id=1298240"
   }
 ]
