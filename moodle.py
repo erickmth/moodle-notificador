@@ -1,4 +1,5 @@
 import re
+import json
 from urllib.parse import urlparse, parse_qs
 
 import requests
@@ -151,6 +152,7 @@ class MoodleClient:
         return True
 
     def _extract_sesskey(self, html):
+
         patterns = [
             r'M\.cfg\.sesskey\s*=\s*[\'"]([^\'"]+)',
             r'"sesskey"\s*:\s*"([^"]+)"',
@@ -177,7 +179,9 @@ class MoodleClient:
 
         input_element = soup.find(
             "input",
-            {"name": "sesskey"}
+            {
+                "name": "sesskey"
+            }
         )
 
         if input_element:
@@ -312,12 +316,16 @@ class MoodleClient:
                 parsed.query
             )
 
-            values = params.get("id")
+            values = params.get(
+                "id"
+            )
 
             if not values:
                 return None
 
-            return int(values[0])
+            return int(
+                values[0]
+            )
 
         except Exception:
 
@@ -328,12 +336,17 @@ class MoodleClient:
         if not cmid:
             return None
 
-        methodname = "core_course_get_module"
+        methodname = "core_course_get_course_module"
 
         args = {
-            "id": int(cmid),
-            "sectionreturn": 0,
+            "cmid": int(cmid),
         }
+
+        print()
+        print(
+            f"      🔎 Consultando informações "
+            f"do módulo CMID {cmid}..."
+        )
 
         try:
 
@@ -345,28 +358,48 @@ class MoodleClient:
         except Exception as erro:
 
             print(
-                f"      ⚠️ Não foi possível consultar "
-                f"o módulo {cmid}: {erro}"
+                f"      ❌ Erro ao consultar módulo: "
+                f"{erro}"
             )
 
             return None
 
+        print(
+            "      📦 Resposta do módulo:"
+        )
+
+        try:
+
+            print(
+                json.dumps(
+                    data,
+                    ensure_ascii=False,
+                    indent=2
+                )
+            )
+
+        except Exception:
+
+            print(
+                repr(data)
+            )
+
         if not data:
             return None
 
-        if isinstance(data, dict):
+        if isinstance(
+            data,
+            dict
+        ):
 
             if isinstance(
                 data.get("cm"),
                 dict
             ):
-                return data.get("cm")
 
-            if isinstance(
-                data.get("coursemodule"),
-                dict
-            ):
-                return data.get("coursemodule")
+                return data.get(
+                    "cm"
+                )
 
             return data
 
@@ -389,6 +422,19 @@ class MoodleClient:
             "userid": 0,
         }
 
+        print()
+        print("=" * 70)
+        print(
+            "RESPOSTA BRUTA DO STATUS DA ENTREGA"
+        )
+        print(
+            f"Assignment ID: {assignid}"
+        )
+        print(
+            f"Arguments: {args}"
+        )
+        print("=" * 70)
+
         try:
 
             data = self._ajax_request(
@@ -399,11 +445,35 @@ class MoodleClient:
         except Exception as erro:
 
             print(
-                f"      ⚠️ Não foi possível consultar "
-                f"a entrega: {erro}"
+                f"❌ ERRO AO CONSULTAR STATUS: "
+                f"{erro}"
             )
 
+            print("=" * 70)
+
             return None
+
+        try:
+
+            print(
+                json.dumps(
+                    data,
+                    ensure_ascii=False,
+                    indent=2
+                )
+            )
+
+        except Exception:
+
+            print(
+                repr(data)
+            )
+
+        print("=" * 70)
+        print(
+            "FIM DA RESPOSTA"
+        )
+        print("=" * 70)
 
         return data
 
@@ -412,7 +482,11 @@ class MoodleClient:
         data
     ):
 
-        if not isinstance(data, dict):
+        if not isinstance(
+            data,
+            dict
+        ):
+
             return None
 
         possible_objects = []
@@ -425,6 +499,7 @@ class MoodleClient:
             lastattempt,
             dict
         ):
+
             possible_objects.append(
                 lastattempt
             )
@@ -437,6 +512,7 @@ class MoodleClient:
                 submission,
                 dict
             ):
+
                 possible_objects.append(
                     submission
                 )
@@ -449,6 +525,7 @@ class MoodleClient:
             status,
             dict
         ):
+
             possible_objects.append(
                 status
             )
@@ -461,6 +538,7 @@ class MoodleClient:
                 submission,
                 dict
             ):
+
                 possible_objects.append(
                     submission
                 )
@@ -473,6 +551,7 @@ class MoodleClient:
             submission,
             dict
         ):
+
             possible_objects.append(
                 submission
             )
@@ -485,7 +564,9 @@ class MoodleClient:
                 "state",
             ):
 
-                value = obj.get(key)
+                value = obj.get(
+                    key
+                )
 
                 if isinstance(
                     value,
@@ -495,6 +576,7 @@ class MoodleClient:
                     value = value.lower().strip()
 
                     if value:
+
                         return value
 
         return None
@@ -509,15 +591,24 @@ class MoodleClient:
             ""
         )
 
+        print()
+        print(
+            f"   🔗 URL da atividade: {url}"
+        )
+
         cmid = self._extract_cmid_from_url(
             url
+        )
+
+        print(
+            f"   🆔 CMID encontrado: {cmid}"
         )
 
         if not cmid:
 
             print(
-                "      ⚠️ Não foi possível "
-                "identificar o CMID."
+                "   ⚠️ Não foi possível identificar "
+                "o CMID."
             )
 
             return False
@@ -527,6 +618,11 @@ class MoodleClient:
         )
 
         if not module:
+
+            print(
+                "   ⚠️ Não foi possível obter "
+                "os dados estruturados do módulo."
+            )
 
             return False
 
@@ -540,51 +636,61 @@ class MoodleClient:
             modname
         ).lower()
 
-        if modname != "assign":
-
-            print(
-                f"      ℹ️ Módulo {cmid} não é "
-                f"uma atividade de entrega: {modname or 'desconhecido'}"
-            )
-
-            return False
-
         assignid = (
             module.get("instance")
             or module.get("instanceid")
         )
 
-        if not assignid:
+        print(
+            f"   🧩 Tipo do módulo: "
+            f"{modname or 'não identificado'}"
+        )
+
+        print(
+            f"   🆔 Instance: "
+            f"{assignid or 'não identificado'}"
+        )
+
+        if modname != "assign":
 
             print(
-                "      ⚠️ O módulo não retornou "
-                "o ID interno da atividade."
+                "   ℹ️ Não é uma atividade "
+                "mod_assign."
             )
 
             return False
 
-        print(
-            f"      🔎 Consultando entrega "
-            f"(CMID: {cmid} | Assignment: {assignid})..."
-        )
+        if not assignid:
 
-        status_data = self.get_submission_status(
+            print(
+                "   ⚠️ Não foi possível encontrar "
+                "o instance ID da atividade."
+            )
+
+            return False
+
+        data = self.get_submission_status(
             assignid
         )
 
-        if not status_data:
+        if not data:
+
+            print(
+                "   ⚠️ Moodle não retornou "
+                "dados de submissão."
+            )
 
             return False
 
         state = self._get_submission_state(
-            status_data
+            data
         )
 
-        if state:
-
-            print(
-                f"      📌 Status da entrega: {state}"
-            )
+        print()
+        print(
+            f"   📌 Estado identificado: "
+            f"{state or 'NÃO IDENTIFICADO'}"
+        )
 
         if state in (
             "submitted",
@@ -604,7 +710,9 @@ class MoodleClient:
 
         for event in events:
 
-            event_id = event.get("id")
+            event_id = event.get(
+                "id"
+            )
 
             name = (
                 event.get("name")
@@ -684,116 +792,16 @@ class MoodleClient:
 
         return normalized
 
-    def get_pending_events(self):
+    def test_submission(self):
 
-        events = self.get_normalized_events()
-
+        print()
+        print("=" * 70)
         print(
-            f"📅 Eventos encontrados no calendário: "
-            f"{len(events)}"
+            "       DIAGNÓSTICO DE ENTREGA MOODLE"
         )
-
-        pending = []
-
-        for event in events:
-
-            event_type = str(
-                event.get("tipo")
-                or ""
-            ).lower()
-
-            if event_type != "due":
-
-                continue
-
-            print()
-            print(
-                f"📝 Verificando: "
-                f"{event.get('nome', 'Sem nome')}"
-            )
-
-            print(
-                f"   📚 Disciplina: "
-                f"{event.get('disciplina') or 'Não identificada'}"
-            )
-
-            print(
-                f"   🔗 URL: "
-                f"{event.get('url') or 'Não disponível'}"
-            )
-
-            submitted = self.is_assignment_submitted(
-                event
-            )
-
-            if submitted:
-
-                print(
-                    "   ✅ Atividade já enviada. "
-                    "Não será adicionada ao painel."
-                )
-
-                continue
-
-            print(
-                "   ⏳ Atividade ainda pendente."
-            )
-
-            pending.append(
-                event
-            )
-
-        return pending
-
-    def test(self):
-
-        print()
-        print("=" * 50)
-        print("          NOTIFICADOR MOODLE")
-        print("=" * 50)
-
-        print()
-        print("Consultando Moodle...")
+        print("=" * 70)
 
         self.login()
-
-        print()
-        print(
-            "Moodle autenticado com sucesso."
-        )
-
-        print()
-        print("Consultando disciplinas...")
-
-        courses = self.get_courses()
-
-        print(
-            f"📚 Disciplinas encontradas: "
-            f"{len(courses)}"
-        )
-
-        for course in courses:
-
-            fullname = course.get(
-                "fullname",
-                "Sem nome"
-            )
-
-            shortname = course.get(
-                "shortname",
-                ""
-            )
-
-            course_id = course.get(
-                "id",
-                ""
-            )
-
-            print(
-                f"   • {fullname}"
-                f" | {shortname}"
-                f" | ID: {course_id}"
-            )
 
         print()
         print(
@@ -803,54 +811,111 @@ class MoodleClient:
         events = self.get_normalized_events()
 
         print(
-            f"📅 Eventos encontrados: "
+            f"📅 Total de eventos: "
             f"{len(events)}"
         )
 
+        due_events = []
+
         for event in events:
+
+            event_type = str(
+                event.get("tipo")
+                or ""
+            ).lower()
+
+            if event_type == "due":
+
+                due_events.append(
+                    event
+                )
+
+        print(
+            f"📋 Eventos due encontrados: "
+            f"{len(due_events)}"
+        )
+
+        if not due_events:
+
+            print(
+                "❌ Nenhum evento due encontrado."
+            )
+
+            return
+
+        print()
+
+        for index, event in enumerate(
+            due_events,
+            start=1
+        ):
+
+            print(
+                "=" * 70
+            )
+
+            print(
+                f"ATIVIDADE {index}"
+            )
+
+            print(
+                "=" * 70
+            )
+
+            print(
+                f"Nome: {event.get('nome')}"
+            )
+
+            print(
+                f"Disciplina: "
+                f"{event.get('disciplina')}"
+            )
+
+            print(
+                f"ID do evento: "
+                f"{event.get('id')}"
+            )
+
+            print(
+                f"URL: "
+                f"{event.get('url')}"
+            )
 
             print()
 
-            print(
-                f"   📝 {event['nome']}"
+            submitted = self.is_assignment_submitted(
+                event
             )
 
-            print(
-                f"      ID: "
-                f"{event['id']}"
-            )
+            print()
 
-            print(
-                f"      Disciplina: "
-                f"{event['disciplina'] or 'Não identificada'}"
-            )
-
-            print(
-                f"      Curso ID: "
-                f"{event['curso_id'] or 'Não identificado'}"
-            )
-
-            print(
-                f"      Tipo: "
-                f"{event['tipo'] or 'Não identificado'}"
-            )
-
-            print(
-                f"      Timestamp: "
-                f"{event['timestamp']}"
-            )
-
-            if event["url"]:
+            if submitted:
 
                 print(
-                    f"      URL: "
-                    f"{event['url']}"
+                    "🟢 RESULTADO: "
+                    "ATIVIDADE IDENTIFICADA COMO ENVIADA"
                 )
 
-        print()
-        print("=" * 50)
-        print("Fim da verificação.")
-        print("=" * 50)
+            else:
+
+                print(
+                    "🟡 RESULTADO: "
+                    "ATIVIDADE NÃO FOI IDENTIFICADA COMO ENVIADA"
+                )
+
+            print()
+
+        print(
+            "=" * 70
+        )
+
+        print(
+            "Fim do diagnóstico."
+        )
+
+        print(
+            "=" * 70
+        )
 
 
 if __name__ == "__main__":
@@ -882,4 +947,4 @@ if __name__ == "__main__":
         password=password
     )
 
-    client.test()
+    client.test_submission()
