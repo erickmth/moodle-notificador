@@ -433,10 +433,7 @@
 
     let todosEventos = [];
 
-    /*
-     * Converte timestamp Unix para data/hora
-     * no fuso horário de São Paulo.
-     */
+
     function formatarDataHora(timestamp) {
 
         if (!timestamp) {
@@ -459,10 +456,6 @@
     }
 
 
-    /*
-     * Retorna somente a data no formato:
-     * DD/MM/YYYY
-     */
     function formatarSomenteData(timestamp) {
 
         if (!timestamp) {
@@ -484,28 +477,124 @@
 
 
     /*
-     * Retorna um Date convertido para o fuso
-     * usado pelo painel.
+     * Retorna as partes da data no fuso
+     * de São Paulo.
+     *
+     * Isso evita comparar a data do navegador
+     * com uma data UTC de forma incorreta.
      */
-    function obterData(timestamp) {
+    function obterPartesData(timestamp) {
 
-        if (!timestamp) {
-            return null;
+        const data = new Date(Number(timestamp) * 1000);
+
+        const partes = new Intl.DateTimeFormat(
+            "en-US",
+            {
+                timeZone: "America/Sao_Paulo",
+                year: "numeric",
+                month: "2-digit",
+                day: "2-digit",
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+                hour12: false
+            }
+        ).formatToParts(data);
+
+
+        const resultado = {};
+
+        for (const parte of partes) {
+
+            if (parte.type !== "literal") {
+                resultado[parte.type] = Number(parte.value);
+            }
         }
 
-        return new Date(Number(timestamp) * 1000);
+
+        return resultado;
     }
 
 
     /*
-     * Cria uma chave da atividade.
-     *
-     * open / due / close normalmente possuem
-     * a mesma URL do módulo do Moodle.
-     *
-     * Dessa forma conseguimos reconhecer que
-     * os três eventos pertencem à mesma atividade.
+     * Retorna uma chave YYYY-MM-DD
+     * considerando São Paulo.
      */
+    function obterChaveData(timestamp) {
+
+        const partes =
+            obterPartesData(timestamp);
+
+
+        return [
+            partes.year,
+            String(partes.month).padStart(2, "0"),
+            String(partes.day).padStart(2, "0")
+        ].join("-");
+    }
+
+
+    /*
+     * Cria um objeto Date representando
+     * somente a data do calendário.
+     */
+    function obterDataCalendario(timestamp) {
+
+        const partes =
+            obterPartesData(timestamp);
+
+
+        return new Date(
+            partes.year,
+            partes.month - 1,
+            partes.day
+        );
+    }
+
+
+    /*
+     * Retorna a diferença entre duas datas
+     * ignorando o horário.
+     *
+     * Exemplo:
+     *
+     * 22/09 -> 22/09 = 0
+     * 22/09 -> 23/09 = 1
+     * 22/09 -> 24/09 = 2
+     */
+    function diferencaDiasCalendario(
+        dataInicial,
+        dataFinal
+    ) {
+
+        const inicio =
+            new Date(
+                dataInicial.getFullYear(),
+                dataInicial.getMonth(),
+                dataInicial.getDate()
+            );
+
+
+        const fim =
+            new Date(
+                dataFinal.getFullYear(),
+                dataFinal.getMonth(),
+                dataFinal.getDate()
+            );
+
+
+        const diferenca =
+            fim.getTime() -
+            inicio.getTime();
+
+
+        return Math.round(
+            diferenca /
+            (1000 * 60 * 60 * 24)
+        );
+    }
+
+
     function obterChaveAtividade(evento) {
 
         if (evento.url) {
@@ -514,14 +603,15 @@
 
                 const url = new URL(evento.url);
 
-                const id = url.searchParams.get("id");
+                const id =
+                    url.searchParams.get("id");
 
                 if (id) {
                     return `moodle-id:${id}`;
                 }
 
             } catch (erro) {
-                // Continua para os métodos alternativos.
+                // Continua.
             }
         }
 
@@ -532,7 +622,9 @@
 
                 const url = new URL(evento.url);
 
-                return `url:${url.pathname}${url.search}`;
+                return (
+                    `url:${url.pathname}${url.search}`
+                );
 
             } catch (erro) {
                 // Continua.
@@ -540,19 +632,19 @@
         }
 
 
-        const nome = String(
-            evento.nome || ""
-        )
-            .toLowerCase()
-            .replace(
-                /\s+(está|esta)\s+marcado\(a\)\s+para\s+esta\s+data/gi,
-                ""
-            )
-            .replace(
-                /\s*\((abertura|encerramento)\s+da\s+enquete\)/gi,
-                ""
-            )
-            .trim();
+        const nome =
+            String(evento.nome || "")
+                .toLowerCase()
+                .replace(
+                    /\s+(está|esta)\s+marcado\(a\)\s+para\s+esta\s+data/gi,
+                    ""
+                )
+                .replace(
+                    /\s*\((abertura|encerramento)\s+da\s+enquete\)/gi,
+                    ""
+                )
+                .trim();
+
 
         return [
             evento.curso_id || "",
@@ -563,21 +655,15 @@
 
 
     /*
-     * Remove atividades duplicadas.
+     * Mantém somente o prazo real da atividade.
      *
-     * Regra:
+     * Se houver:
      *
-     * 1. Se existir "due", usamos o "due".
-     * 2. Se houver somente "open" e/ou "close",
-     *    não exibimos a atividade.
+     * open
+     * due
+     * close
      *
-     * Isso evita mostrar:
-     *
-     * - abertura
-     * - entrega
-     * - encerramento
-     *
-     * como três atividades diferentes.
+     * somente o due será mostrado.
      */
     function normalizarAtividades(eventos) {
 
@@ -590,14 +676,12 @@
                 continue;
             }
 
-            const tipo = String(
-                evento.tipo || ""
-            ).toLowerCase();
+
+            const tipo =
+                String(evento.tipo || "")
+                    .toLowerCase();
 
 
-            /*
-             * Ignora tipos desconhecidos.
-             */
             if (
                 tipo !== "due" &&
                 tipo !== "open" &&
@@ -607,12 +691,14 @@
             }
 
 
-            const chave = obterChaveAtividade(evento);
+            const chave =
+                obterChaveAtividade(evento);
 
 
             if (!grupos.has(chave)) {
                 grupos.set(chave, []);
             }
+
 
             grupos.get(chave).push(evento);
         }
@@ -621,11 +707,11 @@
         const resultado = [];
 
 
-        for (const eventosDaAtividade of grupos.values()) {
+        for (
+            const eventosDaAtividade
+            of grupos.values()
+        ) {
 
-            /*
-             * Procura o prazo real.
-             */
             const eventosDue =
                 eventosDaAtividade.filter(
                     evento =>
@@ -634,28 +720,27 @@
                 );
 
 
-            /*
-             * Se existe due, ele é o evento
-             * que representa a atividade.
-             */
             if (eventosDue.length > 0) {
 
                 eventosDue.sort(
                     (a, b) =>
-                        Number(a.timestamp || a.timesort || 0) -
-                        Number(b.timestamp || b.timesort || 0)
+                        Number(
+                            a.timestamp ||
+                            a.timesort ||
+                            0
+                        ) -
+                        Number(
+                            b.timestamp ||
+                            b.timesort ||
+                            0
+                        )
                 );
 
-                resultado.push(eventosDue[0]);
 
-                continue;
+                resultado.push(
+                    eventosDue[0]
+                );
             }
-
-
-            /*
-             * Se só existem open/close,
-             * não mostramos no painel.
-             */
         }
 
 
@@ -663,18 +748,6 @@
     }
 
 
-    /*
-     * Verifica se uma atividade já foi enviada.
-     *
-     * Isso deixa o HTML preparado para quando
-     * o backend começar a registrar:
-     *
-     * enviado: true
-     *
-     * notificacao_enviada: true
-     *
-     * status: "enviado"
-     */
     function foiEnviada(evento) {
 
         if (!evento) {
@@ -703,7 +776,15 @@
 
 
     /*
-     * Calcula o estado do prazo.
+     * Calcula o estado da atividade
+     * usando a data do calendário.
+     *
+     * Isso é importante:
+     *
+     * 22/09 às 19:00
+     * 22/09 às 23:59
+     *
+     * continua sendo HOJE.
      */
     function obterEstado(evento) {
 
@@ -724,25 +805,40 @@
         }
 
 
-        const agora = Date.now();
+        const agora =
+            new Date();
+
 
         const dataEntrega =
-            timestamp * 1000;
+            new Date(timestamp * 1000);
+
+
+        const hoje =
+            new Date(
+                agora.getFullYear(),
+                agora.getMonth(),
+                agora.getDate()
+            );
+
+
+        const dataEntregaCalendario =
+            obterDataCalendario(timestamp);
+
 
         const diferenca =
-            dataEntrega - agora;
+            diferencaDiasCalendario(
+                hoje,
+                dataEntregaCalendario
+            );
 
 
         /*
-         * Prazo já passou.
+         * Prazo em um dia anterior.
          */
         if (diferenca < 0) {
 
             const dias =
-                Math.floor(
-                    Math.abs(diferenca) /
-                    (1000 * 60 * 60 * 24)
-                );
+                Math.abs(diferenca);
 
 
             if (dias === 0) {
@@ -763,30 +859,40 @@
 
 
         /*
-         * Até 7 dias.
+         * Prazo é hoje.
          */
-        const diasRestantes =
-            Math.ceil(
-                diferenca /
-                (1000 * 60 * 60 * 24)
-            );
-
-
-        if (diasRestantes <= 7) {
-
-            if (diasRestantes <= 1) {
-
-                return {
-                    classe: "badge-proximo",
-                    texto: "Entrega amanhã"
-                };
-            }
-
+        if (diferenca === 0) {
 
             return {
                 classe: "badge-proximo",
                 texto:
-                    `Entrega em ${diasRestantes} dias`
+                    `Entrega hoje às ${obterHora(dataEntrega)}`
+            };
+        }
+
+
+        /*
+         * Prazo amanhã.
+         */
+        if (diferenca === 1) {
+
+            return {
+                classe: "badge-proximo",
+                texto:
+                    `Entrega amanhã às ${obterHora(dataEntrega)}`
+            };
+        }
+
+
+        /*
+         * Prazo dentro dos próximos 7 dias.
+         */
+        if (diferenca <= 7) {
+
+            return {
+                classe: "badge-proximo",
+                texto:
+                    `Entrega em ${diferenca} dias`
             };
         }
 
@@ -799,8 +905,31 @@
 
 
     /*
-     * Formata a diferença para mostrar no card.
+     * Retorna somente HH:MM no horário
+     * de São Paulo.
      */
+    function obterHora(timestampOuData) {
+
+        const data =
+            timestampOuData instanceof Date
+                ? timestampOuData
+                : new Date(
+                    Number(timestampOuData) * 1000
+                );
+
+
+        return new Intl.DateTimeFormat(
+            "pt-BR",
+            {
+                timeZone: "America/Sao_Paulo",
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: false
+            }
+        ).format(data);
+    }
+
+
     function obterTextoPrazo(evento) {
 
         const timestamp =
@@ -816,52 +945,88 @@
         }
 
 
+        const agora =
+            new Date();
+
+
+        const dataEntrega =
+            new Date(timestamp * 1000);
+
+
+        const hoje =
+            new Date(
+                agora.getFullYear(),
+                agora.getMonth(),
+                agora.getDate()
+            );
+
+
+        const dataEntregaCalendario =
+            obterDataCalendario(timestamp);
+
+
         const diferenca =
-            (timestamp * 1000) - Date.now();
+            diferencaDiasCalendario(
+                hoje,
+                dataEntregaCalendario
+            );
 
 
+        /*
+         * Prazo já passou no calendário.
+         */
         if (diferenca < 0) {
 
             const dias =
-                Math.floor(
-                    Math.abs(diferenca) /
-                    (1000 * 60 * 60 * 24)
-                );
+                Math.abs(diferenca);
 
 
-            if (dias === 0) {
+            if (dias === 1) {
+                return "1 dia de atraso";
+            }
+
+
+            return `${dias} dias de atraso`;
+        }
+
+
+        /*
+         * Mesmo dia:
+         *
+         * Só fica atrasado quando o horário
+         * realmente passar.
+         */
+        if (diferenca === 0) {
+
+            if (
+                dataEntrega.getTime() <
+                agora.getTime()
+            ) {
+
                 return "Prazo encerrado hoje";
             }
 
 
-            return `${dias} dia${dias === 1 ? "" : "s"} de atraso`;
+            return `Entrega hoje às ${obterHora(dataEntrega)}`;
         }
 
 
-        const dias =
-            Math.ceil(
-                diferenca /
-                (1000 * 60 * 60 * 24)
-            );
+        if (diferenca === 1) {
 
-
-        if (dias === 0) {
-            return "Entrega hoje";
+            return `Entrega amanhã às ${obterHora(dataEntrega)}`;
         }
 
 
-        if (dias === 1) {
-            return "Entrega amanhã";
+        if (diferenca <= 7) {
+
+            return `Entrega em ${diferenca} dias`;
         }
 
 
-        return `Entrega em ${dias} dias`;
+        return `Entrega em ${diferenca} dias`;
     }
 
 
-    /*
-     * Agrupa atividades por data.
-     */
     function agruparPorData(eventos) {
 
         const grupos = {};
@@ -896,9 +1061,6 @@
     }
 
 
-    /*
-     * Ordena as atividades pela data do prazo.
-     */
     function ordenarEventos(eventos) {
 
         return [...eventos].sort(
@@ -911,12 +1073,14 @@
                         0
                     );
 
+
                 const dataB =
                     Number(
                         b.timestamp ||
                         b.timesort ||
                         0
                     );
+
 
                 return dataA - dataB;
             }
@@ -925,17 +1089,29 @@
 
 
     /*
-     * Atualiza os números do painel.
+     * Atualiza o resumo superior.
+     *
+     * "Próximos 7 dias" agora usa dias do calendário.
+     *
+     * Se hoje é 22/09:
+     *
+     * 22/09 = dentro dos próximos 7 dias
+     * 23/09 = dentro dos próximos 7 dias
+     * ...
+     * 29/09 = dentro dos próximos 7 dias
      */
     function atualizarResumo(eventos) {
 
         const agora =
-            Date.now();
+            new Date();
 
 
-        const limiteSeteDias =
-            agora +
-            (7 * 24 * 60 * 60 * 1000);
+        const hoje =
+            new Date(
+                agora.getFullYear(),
+                agora.getMonth(),
+                agora.getDate()
+            );
 
 
         const atrasadas =
@@ -948,10 +1124,51 @@
                         0
                     );
 
-                return (
-                    timestamp &&
-                    timestamp * 1000 < agora
-                );
+
+                if (!timestamp) {
+                    return false;
+                }
+
+
+                const dataEntrega =
+                    new Date(timestamp * 1000);
+
+
+                const dataCalendario =
+                    obterDataCalendario(timestamp);
+
+
+                const diferenca =
+                    diferencaDiasCalendario(
+                        hoje,
+                        dataCalendario
+                    );
+
+
+                /*
+                 * Só considera atrasada se:
+                 *
+                 * - a data já passou
+                 *
+                 * ou
+                 *
+                 * - é hoje e o horário já passou.
+                 */
+                if (diferenca < 0) {
+                    return true;
+                }
+
+
+                if (diferenca === 0) {
+
+                    return (
+                        dataEntrega.getTime() <
+                        agora.getTime()
+                    );
+                }
+
+
+                return false;
 
             }).length;
 
@@ -966,31 +1183,44 @@
                         0
                     );
 
+
                 if (!timestamp) {
                     return false;
                 }
 
-                const data =
-                    timestamp * 1000;
+
+                const dataCalendario =
+                    obterDataCalendario(timestamp);
+
+
+                const diferenca =
+                    diferencaDiasCalendario(
+                        hoje,
+                        dataCalendario
+                    );
+
 
                 return (
-                    data >= agora &&
-                    data <= limiteSeteDias
+                    diferenca >= 0 &&
+                    diferenca <= 7
                 );
 
             }).length;
 
 
         document.getElementById("total")
-            .textContent = eventos.length;
+            .textContent =
+            eventos.length;
 
 
         document.getElementById("atrasadas")
-            .textContent = atrasadas;
+            .textContent =
+            atrasadas;
 
 
         document.getElementById("proximos")
-            .textContent = proximos;
+            .textContent =
+            proximos;
 
 
         /*
@@ -1007,9 +1237,15 @@
                             0
                         );
 
+
+                    if (!timestamp) {
+                        return false;
+                    }
+
+
                     return (
-                        timestamp &&
-                        timestamp * 1000 >= agora
+                        timestamp * 1000 >=
+                        agora.getTime()
                     );
 
                 })
@@ -1045,14 +1281,12 @@
         } else {
 
             document.getElementById("proxima")
-                .textContent = "—";
+                .textContent =
+                "—";
         }
     }
 
 
-    /*
-     * Renderiza os cards.
-     */
     function renderizar(eventos) {
 
         const lista =
@@ -1063,6 +1297,7 @@
 
             lista.innerHTML = `
                 <div class="empty">
+
                     <div class="empty-title">
                         Nenhuma atividade encontrada
                     </div>
@@ -1071,6 +1306,7 @@
                         Não existem atividades com prazo
                         para exibir no momento.
                     </div>
+
                 </div>
             `;
 
@@ -1085,17 +1321,22 @@
         let html = "";
 
 
-        for (const [data, eventosDaData] of Object.entries(grupos)) {
+        for (
+            const [data, eventosDaData]
+            of Object.entries(grupos)
+        ) {
 
             const ordenados =
-                ordenarEventos(eventosDaData);
+                ordenarEventos(
+                    eventosDaData
+                );
 
 
             html += `
                 <section class="date-group">
 
                     <div class="date-title">
-                        ${data}
+                        ${escaparHTML(data)}
                     </div>
             `;
 
@@ -1143,8 +1384,8 @@
                     <article
                         class="event-card"
                         data-search="
-                            ${nome.toLowerCase()}
-                            ${disciplina.toLowerCase()}
+                            ${escaparHTML(nome.toLowerCase())}
+                            ${escaparHTML(disciplina.toLowerCase())}
                         "
                     >
 
@@ -1203,14 +1444,11 @@
         }
 
 
-        lista.innerHTML = html;
+        lista.innerHTML =
+            html;
     }
 
 
-    /*
-     * Protege textos vindos do JSON antes
-     * de inseri-los no HTML.
-     */
     function escaparHTML(texto) {
 
         return String(texto)
@@ -1222,9 +1460,6 @@
     }
 
 
-    /*
-     * Protege URLs utilizadas nos atributos HTML.
-     */
     function escaparAtributo(texto) {
 
         return String(texto)
@@ -1235,9 +1470,6 @@
     }
 
 
-    /*
-     * Aplica pesquisa.
-     */
     function aplicarPesquisa() {
 
         const termo =
@@ -1248,7 +1480,9 @@
 
 
         const cards =
-            document.querySelectorAll(".event-card");
+            document.querySelectorAll(
+                ".event-card"
+            );
 
 
         cards.forEach(card => {
@@ -1259,7 +1493,10 @@
                     .toLowerCase();
 
 
-            if (!termo || texto.includes(termo)) {
+            if (
+                !termo ||
+                texto.includes(termo)
+            ) {
 
                 card.style.display = "";
 
@@ -1271,21 +1508,20 @@
         });
 
 
-        /*
-         * Esconde grupos de datas que ficaram
-         * sem nenhum card após a pesquisa.
-         */
         document
             .querySelectorAll(".date-group")
             .forEach(grupo => {
 
                 const cardsVisiveis =
                     Array.from(
-                        grupo.querySelectorAll(".event-card")
+                        grupo.querySelectorAll(
+                            ".event-card"
+                        )
                     )
                     .some(
                         card =>
-                            card.style.display !== "none"
+                            card.style.display !==
+                            "none"
                     );
 
 
@@ -1297,9 +1533,6 @@
     }
 
 
-    /*
-     * Carrega eventos.json.
-     */
     async function carregarEventos() {
 
         const lista =
@@ -1338,18 +1571,12 @@
             }
 
 
-            /*
-             * Primeiro remove duplicações entre
-             * open/due/close.
-             */
             let eventos =
-                normalizarAtividades(dados);
+                normalizarAtividades(
+                    dados
+                );
 
 
-            /*
-             * Depois remove eventos que futuramente
-             * estiverem marcados como enviados.
-             */
             eventos =
                 eventos.filter(
                     evento =>
@@ -1357,24 +1584,29 @@
                 );
 
 
-            /*
-             * Ordena por prazo.
-             */
             eventos =
-                ordenarEventos(eventos);
+                ordenarEventos(
+                    eventos
+                );
 
 
             todosEventos =
                 eventos;
 
 
-            atualizarResumo(eventos);
+            atualizarResumo(
+                eventos
+            );
 
-            renderizar(eventos);
+
+            renderizar(
+                eventos
+            );
 
 
-            document.getElementById("statusText")
-                .textContent =
+            document.getElementById(
+                "statusText"
+            ).textContent =
                 `${eventos.length} atividade${
                     eventos.length === 1
                         ? ""
@@ -1384,6 +1616,13 @@
                         ? ""
                         : "s"
                 }`;
+
+
+            /*
+             * Caso exista pesquisa ativa,
+             * reaplica depois da atualização.
+             */
+            aplicarPesquisa();
 
 
         } catch (erro) {
@@ -1396,24 +1635,27 @@
 
             lista.innerHTML = `
                 <div class="error">
+
                     Não foi possível carregar
                     as atividades.
+
                     <br><br>
-                    Erro: ${escaparHTML(erro.message)}
+
+                    Erro:
+                    ${escaparHTML(erro.message)}
+
                 </div>
             `;
 
 
-            document.getElementById("statusText")
-                .textContent =
+            document.getElementById(
+                "statusText"
+            ).textContent =
                 "Erro ao atualizar atividades.";
         }
     }
 
 
-    /*
-     * Pesquisa em tempo real.
-     */
     document
         .getElementById("search")
         .addEventListener(
@@ -1422,14 +1664,11 @@
         );
 
 
-    /*
-     * Inicialização.
-     */
     carregarEventos();
 
 
     /*
-     * Atualiza automaticamente a cada 60 segundos.
+     * Atualiza automaticamente a cada minuto.
      */
     setInterval(
         carregarEventos,
