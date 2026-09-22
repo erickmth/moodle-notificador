@@ -316,7 +316,9 @@ class MoodleClient:
                 parsed.query
             )
 
-            values = params.get("id")
+            values = params.get(
+                "id"
+            )
 
             if not values:
                 return None
@@ -334,17 +336,16 @@ class MoodleClient:
         if not cmid:
             return None
 
-        methodname = "core_course_get_module"
+        methodname = "core_course_get_course_module"
 
         args = {
-            "id": int(cmid),
-            "sectionreturn": 0,
+            "cmid": int(cmid),
         }
 
         print()
         print(
-            f"      🔎 Consultando módulo "
-            f"CMID {cmid}..."
+            f"      🔎 Consultando informações "
+            f"do módulo CMID {cmid}..."
         )
 
         try:
@@ -396,15 +397,8 @@ class MoodleClient:
                 dict
             ):
 
-                return data.get("cm")
-
-            if isinstance(
-                data.get("coursemodule"),
-                dict
-            ):
-
                 return data.get(
-                    "coursemodule"
+                    "cm"
                 )
 
             return data
@@ -597,13 +591,13 @@ class MoodleClient:
             ""
         )
 
-        cmid = self._extract_cmid_from_url(
-            url
-        )
-
         print()
         print(
             f"   🔗 URL da atividade: {url}"
+        )
+
+        cmid = self._extract_cmid_from_url(
+            url
         )
 
         print(
@@ -627,7 +621,7 @@ class MoodleClient:
 
             print(
                 "   ⚠️ Não foi possível obter "
-                "os dados do módulo."
+                "os dados estruturados do módulo."
             )
 
             return False
@@ -698,11 +692,15 @@ class MoodleClient:
             f"{state or 'NÃO IDENTIFICADO'}"
         )
 
-        return state in (
+        if state in (
             "submitted",
             "graded",
             "returned",
-        )
+        ):
+
+            return True
+
+        return False
 
     def get_normalized_events(self):
 
@@ -794,9 +792,7 @@ class MoodleClient:
 
         return normalized
 
-    def test_submission(
-        self
-    ):
+    def test_submission(self):
 
         print()
         print("=" * 70)
