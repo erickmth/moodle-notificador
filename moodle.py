@@ -1,4 +1,6 @@
 import re
+from urllib.parse import urlparse, parse_qs
+
 import requests
 from bs4 import BeautifulSoup
 
@@ -149,7 +151,6 @@ class MoodleClient:
         return True
 
     def _extract_sesskey(self, html):
-
         patterns = [
             r'M\.cfg\.sesskey\s*=\s*[\'"]([^\'"]+)',
             r'"sesskey"\s*:\s*"([^"]+)"',
@@ -176,27 +177,16 @@ class MoodleClient:
 
         input_element = soup.find(
             "input",
-            {
-                "name": "sesskey"
-            }
+            {"name": "sesskey"}
         )
 
         if input_element:
-
-            return input_element.get(
-                "value"
-            )
+            return input_element.get("value")
 
         return None
 
-    def _ajax_request(
-        self,
-        methodname,
-        args
-    ):
-
+    def _ajax_request(self, methodname, args):
         if not self.sesskey:
-
             raise RuntimeError(
                 "Sesskey não disponível."
             )
@@ -228,7 +218,13 @@ class MoodleClient:
 
         response.raise_for_status()
 
-        data = response.json()
+        try:
+            data = response.json()
+
+        except Exception as erro:
+            raise RuntimeError(
+                f"O Moodle não retornou JSON válido: {erro}"
+            )
 
         if not isinstance(data, list) or not data:
 
@@ -300,7 +296,363 @@ class MoodleClient:
             []
         )
 
-    def get_normalized_events(self):
+    def _extrair_assign_id(self, url):
+
+        if not url:
+            return None
+
+        try:
+
+            parsed = urlparse(url)
+
+            parametros = parse_qs(
+                parsed.query
+            )
+
+            valores = parametros.get(
+                "id"
+            )
+
+            if valores:
+
+                valor = valores[0]
+
+                if valor.isdigit():
+                    return int(valor)
+
+        except Exception as erro:
+
+            print(
+                f"⚠️ Não foi possível extrair "
+                f"o ID da atividade: {erro}"
+            )
+
+        return None
+
+    def get_submission_status(
+        self,
+        assign_id
+    ):
+        """
+        Consulta o status da entrega de uma
+        atividade do tipo Assignment.
+
+        O Moodle utiliza:
+            mod_assign_get_submission_status
+
+        assignid = ID da instância da atividade.
+        userid = 0 significa usuário atual.
+        """
+
+        if not assign_id:
+            raise ValueError(
+                "assign_id não informado."
+            )
+
+        methodname = (
+            "mod_assign_get_submission_status"
+        )
+
+        args = {
+            "assignid": int(assign_id),
+            "userid": 0,
+        }
+
+        return self._ajax_request(
+            methodname,
+            args
+        )
+
+    def verificar_entrega(
+        self,
+        evento
+    ):
+        """
+        Retorna informações sobre a entrega.
+
+        resultado:
+
+        {
+            "consultado": True,
+            "enviado": True/False,
+            "status": "...",
+            "motivo": "..."
+        }
+        """
+
+        url = evento.get(
+            "url",
+            ""
+        )
+
+        assign_id = self._extrair_assign_id(
+            url
+        )
+
+        if not assign_id:
+
+            return {
+                "consultado": False,
+                "enviado": False,
+                "status": "sem_assign_id",
+                "motivo": (
+                    "Não foi possível encontrar "
+                    "o ID da atividade na URL."
+                ),
+            }
+
+        print(
+            f"      🔎 Consultando entrega "
+            f"da atividade {assign_id}..."
+        )
+
+        try:
+
+            data = self.get_submission_status(
+                assign_id
+            )
+
+            if not data:
+
+                return {
+                    "consultado": True,
+                    "enviado": False,
+                    "status": "sem_dados",
+                    "motivo": (
+                        "Moodle não retornou dados "
+                        "da submissão."
+                    ),
+                }
+
+            return self._interpretar_status_entrega(
+                data
+            )
+
+        except Exception as erro:
+
+            print(
+                f"      ⚠️ Falha ao consultar entrega: "
+                f"{type(erro).__name__}: {erro}"
+            )
+
+            return {
+                "consultado": False,
+                "enviado": False,
+                "status": "erro_consulta",
+                "motivo": str(erro),
+            }
+
+    def _interpretar_status_entrega(
+        self,
+        data
+    ):
+        """
+        Interpreta a resposta do
+        mod_assign_get_submission_status.
+
+        Não considera apenas a existência de
+        uma submissão como suficiente.
+
+        O objetivo é identificar se a atividade
+        realmente foi enviada.
+        """
+
+        status = data.get("status")
+
+        if not isinstance(
+            status,
+            dict
+        ):
+            status = {}
+
+
+        submission = status.get(
+            "submission"
+        )
+
+
+        if not isinstance(
+            submission,
+            dict
+        ):
+            submission = None
+
+
+        lastattempt = data.get(
+            "lastattempt"
+        )
+
+        if not isinstance(
+            lastattempt,
+            dict
+        ):
+            lastattempt = {}
+
+
+        last_submission = lastattempt.get(
+            "submission"
+        )
+
+        if not isinstance(
+            last_submission,
+            dict
+        ):
+            last_submission = None
+
+
+        /*
+         * O Moodle pode fornecer o estado
+         * em submission ou lastattempt.
+         */
+        status_text = (
+            status.get("status")
+            or data.get("status")
+            if isinstance(data.get("status"), str)
+            else None
+        )
+
+
+        if not status_text:
+            status_text = (
+                lastattempt.get("status")
+                or ""
+            )
+
+
+        /*
+         * Algumas versões retornam o status
+         * diretamente no objeto submission.
+         */
+        if not status_text and submission:
+
+            status_text = (
+                submission.get("status")
+                or ""
+            )
+
+
+        if not status_text and last_submission:
+
+            status_text = (
+                last_submission.get("status")
+                or ""
+            )
+
+
+        status_text = str(
+            status_text
+        ).lower().strip()
+
+
+        /*
+         * Estados conhecidos de submissão.
+         */
+        estados_enviados = {
+            "submitted",
+            "graded",
+            "returned",
+        }
+
+
+        estados_nao_enviados = {
+            "draft",
+            "new",
+            "",
+        }
+
+
+        if status_text in estados_enviados:
+
+            return {
+                "consultado": True,
+                "enviado": True,
+                "status": status_text,
+                "motivo": (
+                    "Moodle indica que a "
+                    "atividade foi enviada."
+                ),
+            }
+
+
+        if status_text in estados_nao_enviados:
+
+            return {
+                "consultado": True,
+                "enviado": False,
+                "status": (
+                    status_text
+                    or "new"
+                ),
+                "motivo": (
+                    "Moodle indica que a "
+                    "atividade ainda não foi enviada."
+                ),
+            }
+
+
+        /*
+         * Algumas respostas podem possuir
+         * campos adicionais.
+         *
+         * Tentamos identificar um envio
+         * efetivo sem assumir que apenas a
+         * existência de "submission" significa
+         * que foi entregue.
+         */
+        if submission:
+
+            attempt = submission.get(
+                "attempt"
+            )
+
+            if (
+                attempt is not None
+                and str(attempt).isdigit()
+                and int(attempt) >= 0
+            ):
+
+                submission_status = str(
+                    submission.get(
+                        "status",
+                        ""
+                    )
+                ).lower().strip()
+
+                if submission_status in estados_enviados:
+
+                    return {
+                        "consultado": True,
+                        "enviado": True,
+                        "status": submission_status,
+                        "motivo": (
+                            "Submissão identificada "
+                            "como enviada."
+                        ),
+                    }
+
+
+        /*
+         * Se não conseguimos interpretar com
+         * segurança, mantemos a atividade no
+         * painel.
+         */
+        return {
+            "consultado": True,
+            "enviado": False,
+            "status": (
+                status_text
+                or "desconhecido"
+            ),
+            "motivo": (
+                "Status não reconhecido com "
+                "segurança; atividade mantida."
+            ),
+        }
+
+    def get_normalized_events(
+        self,
+        consultar_entregas=True
+    ):
 
         events = self.get_calendar_events()
 
@@ -308,7 +660,9 @@ class MoodleClient:
 
         for event in events:
 
-            event_id = event.get("id")
+            event_id = event.get(
+                "id"
+            )
 
             name = (
                 event.get("name")
@@ -316,13 +670,18 @@ class MoodleClient:
                 or "Evento sem nome"
             )
 
-            # O Moodle pode retornar o curso
-            # como um objeto/dicionário.
-            course = event.get("course")
+            course = event.get(
+                "course"
+            )
 
-            if isinstance(course, dict):
+            if isinstance(
+                course,
+                dict
+            ):
 
-                course_id = course.get("id")
+                course_id = course.get(
+                    "id"
+                )
 
                 course_name = (
                     course.get("fullname")
@@ -381,27 +740,160 @@ class MoodleClient:
                 normalized_event
             )
 
-        return normalized
+        /*
+         * Agora filtramos somente os prazos
+         * reais das atividades.
+         */
+        eventos_due = [
+            evento
+            for evento in normalized
+            if str(
+                evento.get("tipo", "")
+            ).lower() == "due"
+        ]
+
+
+        if not consultar_entregas:
+
+            return eventos_due
+
+
+        print()
+        print(
+            "Verificando quais atividades "
+            "já foram entregues..."
+        )
+
+
+        eventos_pendentes = []
+
+        for evento in eventos_due:
+
+            print()
+            print(
+                f"   📝 {evento['nome']}"
+            )
+
+            print(
+                f"      Disciplina: "
+                f"{evento['disciplina'] or 'Não identificada'}"
+            )
+
+            print(
+                f"      URL: "
+                f"{evento['url'] or 'Não disponível'}"
+            )
+
+
+            /*
+             * Só atividades mod_assign podem
+             * usar essa consulta.
+             */
+            url_lower = str(
+                evento.get("url", "")
+            ).lower()
+
+
+            if "/mod/assign/" not in url_lower:
+
+                print(
+                    "      ℹ️ Atividade não é "
+                    "mod_assign."
+                )
+
+                print(
+                    "      → Mantida no painel."
+                )
+
+                evento["entrega_consultada"] = False
+                evento["entregue"] = False
+
+                eventos_pendentes.append(
+                    evento
+                )
+
+                continue
+
+
+            resultado =
+                self.verificar_entrega(
+                    evento
+                )
+
+
+            evento["entrega_consultada"] = (
+                resultado["consultado"]
+            )
+
+            evento["entregue"] = (
+                resultado["enviado"]
+            )
+
+            evento["status_entrega"] = (
+                resultado["status"]
+            )
+
+
+            if resultado["enviado"]:
+
+                print(
+                    "      ✅ Já entregue."
+                )
+
+                print(
+                    "      → Removida do painel."
+                )
+
+                continue
+
+
+            print(
+                "      ⏳ Ainda pendente."
+            )
+
+            print(
+                f"      Status: "
+                f"{resultado['status']}"
+            )
+
+            eventos_pendentes.append(
+                evento
+            )
+
+
+        return eventos_pendentes
 
     def test(self):
 
         print()
+
         print("=" * 50)
-        print("          NOTIFICADOR MOODLE")
+
+        print(
+            "          NOTIFICADOR MOODLE"
+        )
+
         print("=" * 50)
 
         print()
-        print("Consultando Moodle...")
+
+        print(
+            "Consultando Moodle..."
+        )
 
         self.login()
 
         print()
+
         print(
             "Moodle autenticado com sucesso."
         )
 
         print()
-        print("Consultando disciplinas...")
+
+        print(
+            "Consultando disciplinas..."
+        )
 
         courses = self.get_courses()
 
@@ -409,6 +901,7 @@ class MoodleClient:
             f"📚 Disciplinas encontradas: "
             f"{len(courses)}"
         )
+
 
         for course in courses:
 
@@ -428,26 +921,35 @@ class MoodleClient:
             )
 
             print(
-                f"   • {fullname}"
-                f" | {shortname}"
-                f" | ID: {course_id}"
+                f"   • {fullname} | "
+                f"{shortname} | "
+                f"ID: {course_id}"
             )
 
+
         print()
+
         print(
             "Consultando eventos do calendário..."
         )
 
-        events = self.get_normalized_events()
+        events = self.get_normalized_events(
+            consultar_entregas=True
+        )
+
+
+        print()
 
         print(
-            f"📅 Eventos encontrados: "
+            f"📅 Atividades pendentes: "
             f"{len(events)}"
         )
+
 
         for event in events:
 
             print()
+
             print(
                 f"   📝 {event['nome']}"
             )
@@ -463,13 +965,13 @@ class MoodleClient:
             )
 
             print(
-                f"      Curso ID: "
-                f"{event['curso_id'] or 'Não identificado'}"
+                f"      Tipo: "
+                f"{event['tipo'] or 'Não identificado'}"
             )
 
             print(
-                f"      Tipo: "
-                f"{event['tipo'] or 'Não identificado'}"
+                f"      Status entrega: "
+                f"{event.get('status_entrega', 'Não consultado')}"
             )
 
             print(
@@ -484,7 +986,13 @@ class MoodleClient:
                     f"{event['url']}"
                 )
 
+
         print()
+
         print("=" * 50)
-        print("Fim da verificação.")
+
+        print(
+            "Fim da verificação."
+        )
+
         print("=" * 50)
