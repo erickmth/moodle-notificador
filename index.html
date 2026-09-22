@@ -1,1835 +1,1440 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Prazos · Moodle</title>
-
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-
-<style>
-  :root{
-    --bg:#faf9f6;
-    --surface:#ffffff;
-    --ink:#1c2130;
-    --muted:#6b7280;
-    --line:#e7e4dc;
-    --line-strong:#d8d4c8;
-
-    --amber:#b6790a;
-    --amber-bg:#fbf0dc;
-
-    --green:#2f7d4f;
-    --green-bg:#e5f3ea;
-
-    --red:#b3261e;
-    --red-bg:#fbe9e7;
-
-    --slate-bg:#eef0f4;
-
-    --shadow:
-      0 1px 2px rgba(28,33,48,.04),
-      0 8px 24px rgba(28,33,48,.05);
-  }
-
-  *{
-    box-sizing:border-box;
-  }
-
-  body{
-    margin:0;
-    background:var(--bg);
-    color:var(--ink);
-    font-family:
-      'Inter',
-      -apple-system,
-      BlinkMacSystemFont,
-      "Segoe UI",
-      Roboto,
-      Arial,
-      sans-serif;
-    -webkit-font-smoothing:antialiased;
-  }
-
-  button,
-  input,
-  select{
-    font:inherit;
-    color:inherit;
-  }
-
-  .wrap{
-    width:min(880px,92%);
-    margin:0 auto;
-    padding:44px 0 80px;
-  }
-
-  /* Header */
-
-  .head{
-    display:flex;
-    align-items:flex-end;
-    justify-content:space-between;
-    gap:20px;
-    margin-bottom:32px;
-    flex-wrap:wrap;
-  }
-
-  .head h1{
-    font-family:'Fraunces',serif;
-    font-weight:600;
-    font-size:34px;
-    letter-spacing:-.4px;
-    margin:0;
-  }
-
-  .head .sub{
-    color:var(--muted);
-    font-size:14.5px;
-    margin-top:6px;
-  }
-
-  .refresh{
-    border:1px solid var(--line-strong);
-    background:var(--surface);
-    padding:10px 16px;
-    border-radius:10px;
-    cursor:pointer;
-    font-size:13.5px;
-    font-weight:600;
-
-    display:inline-flex;
-    align-items:center;
-    gap:7px;
-
-    transition:
-      border-color .15s,
-      background .15s;
-  }
-
-  .refresh:hover{
-    border-color:var(--ink);
-  }
-
-  .refresh:disabled{
-    opacity:.5;
-    cursor:default;
-  }
-
-  .refresh .spin{
-    display:inline-block;
-    transition:transform .5s;
-  }
-
-  .refresh.loading .spin{
-    animation:spin 0.8s linear infinite;
-  }
-
-  @keyframes spin{
-    to{
-      transform:rotate(360deg);
-    }
-  }
-
-  /* Summary */
-
-  .summary{
-    display:flex;
-    gap:0;
-    background:var(--surface);
-    border:1px solid var(--line);
-    border-radius:14px;
-    margin-bottom:22px;
-    overflow:hidden;
-    box-shadow:var(--shadow);
-  }
-
-  .summary > div{
-    flex:1;
-    padding:16px 18px;
-    border-right:1px solid var(--line);
-  }
-
-  .summary > div:last-child{
-    border-right:none;
-  }
-
-  .summary .num{
-    font-size:23px;
-    font-weight:700;
-    line-height:1.1;
-  }
-
-  .summary .lbl{
-    color:var(--muted);
-    font-size:12.5px;
-    margin-top:3px;
-  }
-
-  .summary .num.warn{
-    color:var(--amber);
-  }
-
-  /* Controls */
-
-  .controls{
-    display:flex;
-    gap:10px;
-    margin-bottom:26px;
-    flex-wrap:wrap;
-  }
-
-  .controls input[type=search]{
-    flex:1 1 220px;
-    height:42px;
-
-    border:1px solid var(--line-strong);
-    border-radius:10px;
-
-    padding:0 14px;
-    background:var(--surface);
-    outline:none;
-  }
-
-  .controls input[type=search]:focus{
-    border-color:var(--ink);
-  }
-
-  /* Status */
-
-  .status{
-    display:none;
-
-    background:var(--surface);
-    border:1px solid var(--line);
-    border-radius:12px;
-
-    padding:16px 18px;
-    margin-bottom:20px;
-
-    color:var(--muted);
-    font-size:14px;
-  }
-
-  .status.visible{
-    display:block;
-  }
-
-  .status.error{
-    color:var(--red);
-    background:var(--red-bg);
-    border-color:#f4c9c5;
-  }
-
-  /* Groups */
-
-  .group{
-    margin-bottom:30px;
-  }
-
-  .group-head{
-    display:flex;
-    align-items:baseline;
-    gap:10px;
-
-    margin-bottom:12px;
-    padding-left:2px;
-  }
-
-  .group-head h2{
-    font-family:'Fraunces',serif;
-    font-weight:600;
-    font-size:18px;
-    margin:0;
-  }
-
-  .group-head .count{
-    color:var(--muted);
-    font-size:13px;
-  }
-
-  .group.is-late .group-head h2{
-    color:var(--red);
-  }
-
-  /* Timeline */
-
-  .timeline{
-    position:relative;
-  }
-
-  .item{
-    position:relative;
-
-    background:var(--surface);
-    border:1px solid var(--line);
-    border-left:3px solid var(--red);
-
-    border-radius:12px;
-
-    padding:16px 18px;
-    margin-bottom:10px;
-
-    box-shadow:var(--shadow);
-  }
-
-  .item-top{
-    display:flex;
-    justify-content:space-between;
-    align-items:flex-start;
-
-    gap:14px;
-  }
-
-  .item-name{
-    margin:0;
-
-    font-size:16px;
-    font-weight:600;
-    line-height:1.4;
-
-    word-break:break-word;
-  }
-
-  .item-course{
-    color:var(--muted);
-    font-size:13.5px;
-    margin-top:4px;
-  }
-
-  /* Badge */
-
-  .badge{
-    flex-shrink:0;
-
-    font-size:11.5px;
-    font-weight:700;
-
-    padding:4px 9px;
-
-    border-radius:999px;
-    white-space:nowrap;
-  }
-
-  .badge.tipo-close{
-    color:var(--red);
-    background:var(--red-bg);
-  }
-
-  /* Footer */
-
-  .item-foot{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-
-    margin-top:12px;
-    padding-top:12px;
-
-    border-top:1px solid var(--line);
-
-    gap:12px;
-    flex-wrap:wrap;
-  }
-
-  .item-date{
-    font-size:13.5px;
-    color:var(--ink);
-    font-weight:500;
-  }
-
-  .item-date .rel{
-    color:var(--muted);
-    font-weight:400;
-  }
-
-  .item-open{
-    font-size:13px;
-    font-weight:600;
-
-    color:var(--ink);
-    text-decoration:none;
-
-    display:inline-flex;
-    align-items:center;
-    gap:4px;
-  }
-
-  .item-open:hover{
-    text-decoration:underline;
-  }
-
-  /* Empty */
-
-  .empty{
-    background:var(--surface);
-    border:1px dashed var(--line-strong);
-    border-radius:14px;
-
-    padding:56px 20px;
-
-    text-align:center;
-    color:var(--muted);
-  }
-
-  .empty h2{
-    font-family:'Fraunces',serif;
-    font-weight:600;
-
-    color:var(--ink);
-    font-size:19px;
-
-    margin:0 0 6px;
-  }
-
-  .empty p{
-    margin:0;
-    font-size:14.5px;
-  }
-
-  /* Mobile */
-
-  @media (max-width:640px){
-
-    .wrap{
-      padding:30px 0 60px;
-    }
-
-    .head h1{
-      font-size:27px;
-    }
-
-    .summary{
-      flex-direction:column;
-    }
-
-    .summary > div{
-      border-right:none;
-      border-bottom:1px solid var(--line);
-    }
-
-    .summary > div:last-child{
-      border-bottom:none;
-    }
-
-    .item-top{
-      flex-direction:column;
-    }
-  }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Prazos</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #f5f7fa;
+            --card: #ffffff;
+            --text: #111827;
+            --muted: #6b7280;
+            --border: #e5e7eb;
+            --primary: #111827;
+            --danger: #dc2626;
+            --warning: #d97706;
+            --success: #16a34a;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: var(--bg);
+            color: var(--text);
+            font-family:
+                Inter,
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                Roboto,
+                Arial,
+                sans-serif;
+        }
+
+        .container {
+            width: min(1200px, calc(100% - 32px));
+            margin: 0 auto;
+            padding: 35px 0 50px;
+        }
+
+        .header {
+            margin-bottom: 28px;
+        }
+
+        .header h1 {
+            margin: 0 0 7px;
+            font-size: 32px;
+            font-weight: 750;
+            letter-spacing: -0.7px;
+        }
+
+        .header p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 15px;
+        }
+
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .summary-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            min-height: 110px;
+        }
+
+        .summary-label {
+            color: var(--muted);
+            font-size: 13px;
+            margin-bottom: 10px;
+        }
+
+        .summary-value {
+            font-size: 28px;
+            font-weight: 750;
+            line-height: 1;
+        }
+
+        .search-area {
+            margin-bottom: 25px;
+        }
+
+        .search {
+            width: 100%;
+            height: 48px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: white;
+            padding: 0 16px;
+            font-size: 14px;
+            outline: none;
+            transition: 0.2s;
+        }
+
+        .search:focus {
+            border-color: #9ca3af;
+            box-shadow: 0 0 0 3px rgba(17, 24, 39, 0.06);
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .status-text {
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+        }
+
+        .date-group {
+            margin-bottom: 30px;
+        }
+
+        .date-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .date-title::before {
+            content: "";
+            width: 4px;
+            height: 18px;
+            border-radius: 5px;
+            background: var(--primary);
+        }
+
+        .event-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 15px;
+            padding: 18px;
+            margin-bottom: 10px;
+            transition:
+                transform 0.15s ease,
+                box-shadow 0.15s ease,
+                border-color 0.15s ease;
+        }
+
+        .event-card:hover {
+            transform: translateY(-1px);
+            border-color: #d1d5db;
+            box-shadow: 0 5px 18px rgba(0, 0, 0, 0.05);
+        }
+
+        .event-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 20px;
+        }
+
+        .event-info {
+            min-width: 0;
+            flex: 1;
+        }
+
+        .event-name {
+            margin: 0 0 7px;
+            font-size: 16px;
+            font-weight: 700;
+            line-height: 1.4;
+        }
+
+        .event-course {
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.4;
+            margin-bottom: 10px;
+        }
+
+        .event-date {
+            color: #374151;
+            font-size: 13px;
+        }
+
+        .event-date strong {
+            font-weight: 650;
+        }
+
+        .event-right {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 6px 9px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .badge-atrasado {
+            color: var(--danger);
+            background: #fef2f2;
+        }
+
+        .badge-proximo {
+            color: var(--warning);
+            background: #fffbeb;
+        }
+
+        .badge-normal {
+            color: var(--success);
+            background: #f0fdf4;
+        }
+
+        .event-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 34px;
+            padding: 0 12px;
+            border-radius: 9px;
+            background: #111827;
+            color: white;
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: 600;
+            transition: 0.2s;
+        }
+
+        .event-link:hover {
+            background: #374151;
+        }
+
+        .empty {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 15px;
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+        .empty-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 7px;
+        }
+
+        .empty-text {
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .loading {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 15px;
+            padding: 35px 20px;
+            text-align: center;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .error {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #991b1b;
+            border-radius: 15px;
+            padding: 20px;
+            font-size: 14px;
+        }
+
+        @media (max-width: 900px) {
+            .summary {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 650px) {
+            .container {
+                width: min(100% - 20px, 1200px);
+                padding-top: 25px;
+            }
+
+            .header h1 {
+                font-size: 27px;
+            }
+
+            .summary {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+
+            .summary-card {
+                padding: 16px;
+                min-height: 95px;
+            }
+
+            .summary-value {
+                font-size: 24px;
+            }
+
+            .event-card {
+                padding: 15px;
+            }
+
+            .event-top {
+                flex-direction: column;
+                gap: 13px;
+            }
+
+            .event-right {
+                width: 100%;
+                align-items: flex-start;
+            }
+
+            .event-link {
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .summary {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .summary-value {
+                font-size: 21px;
+            }
+        }
+    </style>
 </head>
 
 <body>
 
-<main class="wrap">
+<div class="container">
 
-  <!-- HEADER -->
+    <header class="header">
+        <h1>Prazos</h1>
+        <p>Atividades do AVA, atualizadas automaticamente</p>
+    </header>
 
-  <header class="head">
+    <section class="summary">
 
-    <div>
+        <div class="summary-card">
+            <div class="summary-label">Total de atividades</div>
+            <div class="summary-value" id="total">0</div>
+        </div>
 
-      <h1>Prazos</h1>
+        <div class="summary-card">
+            <div class="summary-label">Atrasadas</div>
+            <div class="summary-value" id="atrasadas">0</div>
+        </div>
 
-      <div class="sub">
-        Encerramentos de atividades do AVA
-      </div>
+        <div class="summary-card">
+            <div class="summary-label">Próximos 7 dias</div>
+            <div class="summary-value" id="proximos">0</div>
+        </div>
 
-    </div>
+        <div class="summary-card">
+            <div class="summary-label">Próxima entrega</div>
+            <div class="summary-value" id="proxima">—</div>
+        </div>
 
-    <button
-      class="refresh"
-      id="refreshBtn"
-      type="button"
-    >
-      <span class="spin">↻</span>
-      Atualizar
-    </button>
+    </section>
 
-  </header>
+    <section class="search-area">
+        <input
+            type="text"
+            id="search"
+            class="search"
+            placeholder="Pesquisar atividade ou disciplina..."
+            autocomplete="off"
+        >
+    </section>
 
+    <div class="status">
 
-  <!-- SUMMARY -->
+        <div class="status-text" id="statusText">
+            Carregando atividades...
+        </div>
 
-  <section class="summary">
-
-    <div>
-
-      <div
-        class="num"
-        id="statTotal"
-      >
-        0
-      </div>
-
-      <div class="lbl">
-        encerramentos pendentes
-      </div>
-
-    </div>
-
-
-    <div>
-
-      <div
-        class="num warn"
-        id="statLate"
-      >
-        0
-      </div>
-
-      <div class="lbl">
-        atrasados
-      </div>
+        <div class="status-indicator">
+            <span class="status-dot"></span>
+            <span>Atualizado automaticamente</span>
+        </div>
 
     </div>
 
+    <main id="lista">
 
-    <div>
+        <div class="loading">
+            Carregando atividades...
+        </div>
 
-      <div
-        class="num"
-        id="statWeek"
-      >
-        0
-      </div>
+    </main>
 
-      <div class="lbl">
-        nos próximos 7 dias
-      </div>
-
-    </div>
-
-
-    <div>
-
-      <div
-        class="num"
-        id="statNext"
-      >
-        —
-      </div>
-
-      <div class="lbl">
-        próximo encerramento
-      </div>
-
-    </div>
-
-  </section>
-
-
-  <!-- SEARCH -->
-
-  <section class="controls">
-
-    <input
-      type="search"
-      id="searchInput"
-      placeholder="Buscar por atividade ou disciplina..."
-      autocomplete="off"
-    >
-
-  </section>
-
-
-  <!-- STATUS -->
-
-  <div
-    class="status"
-    id="status"
-  ></div>
-
-
-  <!-- EVENTS -->
-
-  <div id="groups"></div>
-
-</main>
-
+</div>
 
 <script>
 
-  const els = {
-
-    groups:
-      document.getElementById('groups'),
-
-    status:
-      document.getElementById('status'),
-
-    search:
-      document.getElementById('searchInput'),
-
-    refresh:
-      document.getElementById('refreshBtn'),
-
-    statTotal:
-      document.getElementById('statTotal'),
-
-    statLate:
-      document.getElementById('statLate'),
-
-    statWeek:
-      document.getElementById('statWeek'),
-
-    statNext:
-      document.getElementById('statNext')
-
-  };
-
-
-  let eventos = [];
-
-
-  /*
-   * ============================================================
-   * STATUS
-   * ============================================================
-   */
-
-  function mostrarStatus(msg, erro = false){
-
-    els.status.textContent = msg;
-
-    els.status.classList.add('visible');
-
-    els.status.classList.toggle(
-      'error',
-      erro
-    );
-
-  }
-
-
-  function esconderStatus(){
-
-    els.status.classList.remove(
-      'visible',
-      'error'
-    );
-
-  }
-
-
-  /*
-   * ============================================================
-   * SEGURANÇA HTML
-   * ============================================================
-   */
-
-  function escaparHTML(v){
-
-    if (
-      v === null ||
-      v === undefined
-    ){
-      return '';
-    }
-
-    return String(v)
-      .replaceAll('&','&amp;')
-      .replaceAll('<','&lt;')
-      .replaceAll('>','&gt;')
-      .replaceAll('"','&quot;')
-      .replaceAll("'",'&#039;');
-
-  }
-
-
-  /*
-   * ============================================================
-   * NORMALIZAÇÃO
-   * ============================================================
-   */
-
-  function normalizarTexto(valor){
-
-    return String(valor || '')
-      .trim()
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g,'')
-      .replace(/\s+/g,' ');
-
-  }
-
-
-  /*
-   * ============================================================
-   * TIMESTAMP
-   * ============================================================
-   */
-
-  function obterTimestamp(ev){
-
-    return Number(
-      ev.timestamp ??
-      ev.timesort ??
-      0
-    );
-
-  }
-
-
-  /*
-   * ============================================================
-   * VERIFICAR SE É ENCERRAMENTO
-   * ============================================================
-   *
-   * O Moodle envia:
-   *
-   * open  = abertura
-   * due   = entrega
-   * close = encerramento
-   *
-   * O painel agora aceita SOMENTE close.
-   *
-   */
-
-  function ehEncerramento(ev){
-
-    const tipo =
-      String(ev.tipo || '')
-        .trim()
-        .toLowerCase();
-
-    return tipo === 'close';
-
-  }
-
-
-  /*
-   * ============================================================
-   * VERIFICAR SE JÁ FOI ENVIADO
-   * ============================================================
-   *
-   * Atualmente o eventos.json não possui necessariamente
-   * essa informação.
-   *
-   * Porém deixamos o HTML preparado para quando o sistema
-   * começar a gravar isso.
-   *
-   * Exemplos aceitos:
-   *
-   * enviado: true
-   * notificacao_enviada: true
-   * status: "enviado"
-   * status: "sent"
-   *
-   */
-
-  function foiEnviado(ev){
-
-    if (
-      ev.enviado === true
-    ){
-      return true;
-    }
-
-    if (
-      ev.notificacao_enviada === true
-    ){
-      return true;
-    }
-
-    const status =
-      normalizarTexto(
-        ev.status
-      );
-
-    if (
-      status === 'enviado' ||
-      status === 'sent'
-    ){
-      return true;
-    }
-
-    if (
-      ev.enviado_em ||
-      ev.notificacao_enviada_em
-    ){
-      return true;
-    }
-
-    return false;
-
-  }
-
-
-  /*
-   * ============================================================
-   * CHAVE DA ATIVIDADE
-   * ============================================================
-   *
-   * O Moodle pode criar eventos diferentes para a mesma
-   * atividade:
-   *
-   * open
-   * due
-   * close
-   *
-   * Esses eventos possuem IDs diferentes.
-   *
-   * Como estamos usando apenas close, ainda podemos ter
-   * duplicações do mesmo encerramento no JSON.
-   *
-   * Primeiro tentamos usar o ID da atividade presente na URL:
-   *
-   * /mod/assign/view.php?id=1293219
-   *
-   * Assim:
-   *
-   * mod/assign/view.php + 1293219
-   *
-   * vira a chave única.
-   *
-   */
-
-  function extrairIdDaURL(url){
-
-    if (!url){
-      return '';
-    }
-
-    try{
-
-      const endereco =
-        new URL(url);
-
-      const id =
-        endereco.searchParams.get('id');
-
-      return id || '';
-
-    }catch(erro){
-
-      return '';
-
-    }
-
-  }
-
-
-  function criarChaveAtividade(ev){
-
-    const url =
-      String(ev.url || '')
-        .trim();
-
-    const idURL =
-      extrairIdDaURL(url);
-
+    let todosEventos = [];
 
     /*
-     * Caso tenha ID na URL,
-     * ele é a melhor forma de identificar
-     * a atividade.
+     * Converte timestamp Unix para data/hora
+     * no fuso horário de São Paulo.
      */
+    function formatarDataHora(timestamp) {
 
-    if (idURL){
+        if (!timestamp) {
+            return "Data não informada";
+        }
 
-      try{
+        const data = new Date(Number(timestamp) * 1000);
 
-        const endereco =
-          new URL(url);
-
-        return [
-          'url',
-          endereco.pathname,
-          idURL
-        ].join(':');
-
-      }catch(erro){
-
-        return [
-          'url-id',
-          idURL
-        ].join(':');
-
-      }
-
+        return new Intl.DateTimeFormat(
+            "pt-BR",
+            {
+                timeZone: "America/Sao_Paulo",
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit"
+            }
+        ).format(data);
     }
 
 
     /*
-     * Fallback caso não exista URL.
+     * Retorna somente a data no formato:
+     * DD/MM/YYYY
      */
+    function formatarSomenteData(timestamp) {
 
-    const curso =
-      normalizarTexto(
-        ev.disciplina ||
-        ev.curso_id ||
-        ''
-      );
+        if (!timestamp) {
+            return "Data não informada";
+        }
 
+        const data = new Date(Number(timestamp) * 1000);
 
-    let nome =
-      normalizarTexto(
-        ev.nome ||
-        ''
-      );
-
-
-    /*
-     * Remove termos que podem variar
-     * entre eventos da mesma atividade.
-     */
-
-    nome =
-      nome.replace(
-        /\s+esta marcado\(a\) para esta data$/i,
-        ''
-      );
-
-
-    nome =
-      nome.replace(
-        /\s*\((abertura|encerramento).*?\)\s*$/i,
-        ''
-      );
-
-
-    return [
-      'fallback',
-      curso,
-      nome
-    ].join('|');
-
-  }
-
-
-  /*
-   * ============================================================
-   * FILTRAR E REMOVER DUPLICADOS
-   * ============================================================
-   */
-
-  function prepararEventos(dados){
-
-    if (!Array.isArray(dados)){
-      return [];
+        return new Intl.DateTimeFormat(
+            "pt-BR",
+            {
+                timeZone: "America/Sao_Paulo",
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric"
+            }
+        ).format(data);
     }
 
 
     /*
-     * 1. SOMENTE ENCERRAMENTOS
+     * Retorna um Date convertido para o fuso
+     * usado pelo painel.
+     */
+    function obterData(timestamp) {
+
+        if (!timestamp) {
+            return null;
+        }
+
+        return new Date(Number(timestamp) * 1000);
+    }
+
+
+    /*
+     * Cria uma chave da atividade.
      *
-     * 2. NÃO EXIBIR ENVIADOS
+     * open / due / close normalmente possuem
+     * a mesma URL do módulo do Moodle.
+     *
+     * Dessa forma conseguimos reconhecer que
+     * os três eventos pertencem à mesma atividade.
      */
+    function obterChaveAtividade(evento) {
 
-    const apenasPendentes =
-      dados.filter(ev => {
+        if (evento.url) {
 
-        if (!ehEncerramento(ev)){
-          return false;
+            try {
+
+                const url = new URL(evento.url);
+
+                const id = url.searchParams.get("id");
+
+                if (id) {
+                    return `moodle-id:${id}`;
+                }
+
+            } catch (erro) {
+                // Continua para os métodos alternativos.
+            }
         }
 
-        if (foiEnviado(ev)){
-          return false;
+
+        if (evento.url) {
+
+            try {
+
+                const url = new URL(evento.url);
+
+                return `url:${url.pathname}${url.search}`;
+
+            } catch (erro) {
+                // Continua.
+            }
         }
 
-        return true;
 
-      });
+        const nome = String(
+            evento.nome || ""
+        )
+            .toLowerCase()
+            .replace(
+                /\s+(está|esta)\s+marcado\(a\)\s+para\s+esta\s+data/gi,
+                ""
+            )
+            .replace(
+                /\s*\((abertura|encerramento)\s+da\s+enquete\)/gi,
+                ""
+            )
+            .trim();
+
+        return [
+            evento.curso_id || "",
+            evento.disciplina || "",
+            nome
+        ].join("|");
+    }
 
 
     /*
-     * 3. REMOVER DUPLICADOS
+     * Remove atividades duplicadas.
+     *
+     * Regra:
+     *
+     * 1. Se existir "due", usamos o "due".
+     * 2. Se houver somente "open" e/ou "close",
+     *    não exibimos a atividade.
+     *
+     * Isso evita mostrar:
+     *
+     * - abertura
+     * - entrega
+     * - encerramento
+     *
+     * como três atividades diferentes.
      */
+    function normalizarAtividades(eventos) {
 
-    const mapa =
-      new Map();
+        const grupos = new Map();
 
 
-    for (
-      const evento
-      of apenasPendentes
-    ){
+        for (const evento of eventos) {
 
-      const chave =
-        criarChaveAtividade(evento);
-
-
-      /*
-       * Se não houver chave,
-       * usa uma chave baseada no objeto.
-       */
-
-      const chaveFinal =
-        chave ||
-        [
-          normalizarTexto(evento.nome),
-          normalizarTexto(evento.disciplina),
-          obterTimestamp(evento)
-        ].join('|');
-
-
-      /*
-       * Se a mesma atividade aparecer
-       * mais de uma vez, mantemos apenas
-       * uma.
-       *
-       * Se houver duas versões,
-       * ficamos com a que possui maior
-       * timestamp.
-       */
-
-      if (!mapa.has(chaveFinal)){
-
-        mapa.set(
-          chaveFinal,
-          evento
-        );
-
-      }else{
-
-        const existente =
-          mapa.get(chaveFinal);
-
-        if (
-          obterTimestamp(evento) >
-          obterTimestamp(existente)
-        ){
-
-          mapa.set(
-            chaveFinal,
-            evento
-          );
-
-        }
-
-      }
-
-    }
-
-
-    return Array.from(
-      mapa.values()
-    );
-
-  }
-
-
-  /*
-   * ============================================================
-   * TEXTO
-   * ============================================================
-   */
-
-  function textoTipo(){
-
-    return 'Encerramento';
-
-  }
-
-
-  function classeTipo(){
-
-    return 'tipo-close';
-
-  }
-
-
-  /*
-   * ============================================================
-   * DATA / HORA
-   * ============================================================
-   */
-
-  function formatarDataHora(ts){
-
-    if (!ts){
-      return null;
-    }
-
-    const d =
-      new Date(
-        Number(ts) * 1000
-      );
-
-
-    if (
-      Number.isNaN(
-        d.getTime()
-      )
-    ){
-
-      return null;
-
-    }
-
-
-    return new Intl.DateTimeFormat(
-      'pt-BR',
-      {
-        timeZone:
-          'America/Sao_Paulo',
-
-        day:'2-digit',
-        month:'2-digit',
-        year:'numeric',
-
-        hour:'2-digit',
-        minute:'2-digit'
-      }
-    ).format(d);
-
-  }
-
-
-  /*
-   * ============================================================
-   * INÍCIO DO DIA
-   * ============================================================
-   */
-
-  function inicioDoDia(
-    offsetDias = 0
-  ){
-
-    const agora =
-      new Date();
-
-    const d =
-      new Date(
-        agora.getFullYear(),
-        agora.getMonth(),
-        agora.getDate() +
-          offsetDias
-      );
-
-    return (
-      d.getTime() / 1000
-    );
-
-  }
-
-
-  /*
-   * ============================================================
-   * TEXTO RELATIVO
-   * ============================================================
-   */
-
-  function textoRelativo(ts){
-
-    const agora =
-      Date.now() / 1000;
-
-    const diffSeg =
-      ts - agora;
-
-    const diffDias =
-      Math.round(
-        diffSeg / 86400
-      );
-
-
-    if (diffSeg < 0){
-
-      const atraso =
-        Math.abs(diffDias);
-
-
-      if (atraso === 0){
-        return 'atrasado hoje';
-      }
-
-
-      return (
-        `${atraso} dia` +
-        `${atraso === 1 ? '' : 's'}` +
-        ` de atraso`
-      );
-
-    }
-
-
-    if (diffDias === 0){
-      return 'hoje';
-    }
-
-
-    if (diffDias === 1){
-      return 'amanhã';
-    }
-
-
-    if (diffDias < 7){
-
-      return `em ${diffDias} dias`;
-
-    }
-
-
-    return null;
-
-  }
-
-
-  /*
-   * ============================================================
-   * GRUPOS
-   * ============================================================
-   */
-
-  function grupoDe(ts){
-
-    if (!ts){
-      return 'sem-data';
-    }
-
-
-    const hojeInicio =
-      inicioDoDia(0);
-
-    const amanhaInicio =
-      inicioDoDia(1);
-
-    const depoisInicio =
-      inicioDoDia(2);
-
-    const semanaFim =
-      inicioDoDia(7);
-
-    const mesFim =
-      inicioDoDia(30);
-
-
-    if (
-      ts < hojeInicio
-    ){
-      return 'atrasado';
-    }
-
-
-    if (
-      ts < amanhaInicio
-    ){
-      return 'hoje';
-    }
-
-
-    if (
-      ts < depoisInicio
-    ){
-      return 'amanha';
-    }
-
-
-    if (
-      ts < semanaFim
-    ){
-      return 'semana';
-    }
-
-
-    if (
-      ts < mesFim
-    ){
-      return 'mes';
-    }
-
-
-    return 'depois';
-
-  }
-
-
-  const ORDEM_GRUPOS = [
-
-    {
-      id:'atrasado',
-      titulo:'Atrasado',
-      late:true
-    },
-
-    {
-      id:'hoje',
-      titulo:'Hoje'
-    },
-
-    {
-      id:'amanha',
-      titulo:'Amanhã'
-    },
-
-    {
-      id:'semana',
-      titulo:'Esta semana'
-    },
-
-    {
-      id:'mes',
-      titulo:'Este mês'
-    },
-
-    {
-      id:'depois',
-      titulo:'Mais adiante'
-    },
-
-    {
-      id:'sem-data',
-      titulo:'Sem data'
-    }
-
-  ];
-
-
-  /*
-   * ============================================================
-   * HTML DE CADA EVENTO
-   * ============================================================
-   */
-
-  function itemHTML(ev){
-
-    const nome =
-      escaparHTML(
-        ev.nome ||
-        'Atividade sem nome'
-      );
-
-
-    const disciplina =
-      escaparHTML(
-        ev.disciplina ||
-        'Disciplina não identificada'
-      );
-
-
-    const ts =
-      obterTimestamp(ev);
-
-
-    const dataFormatada =
-      formatarDataHora(ts) ||
-      'Data não informada';
-
-
-    const rel =
-      ts
-        ? textoRelativo(ts)
-        : null;
-
-
-    const url =
-      ev.url
-        ? String(ev.url)
-        : '';
-
-
-    /*
-     * Segurança:
-     * só permite links do Moodle.
-     */
-
-    let linkMoodle = '';
-
-
-    if (url){
-
-      try{
-
-        const endereco =
-          new URL(url);
-
-        const permitido =
-          endereco.protocol === 'https:' &&
-          endereco.hostname ===
-            'ava.fiep.digital';
-
-
-        if (permitido){
-
-          linkMoodle = `
-            <a
-              class="item-open"
-              href="${escaparHTML(url)}"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Abrir no Moodle →
-            </a>
-          `;
-
-        }
-
-      }catch(erro){
-
-        linkMoodle = '';
-
-      }
-
-    }
-
-
-    return `
-
-      <article class="item tipo-close">
-
-        <div class="item-top">
-
-          <div>
-
-            <h3 class="item-name">
-              ${nome}
-            </h3>
-
-            <div class="item-course">
-              ${disciplina}
-            </div>
-
-          </div>
-
-
-          <span class="badge tipo-close">
-            Encerramento
-          </span>
-
-        </div>
-
-
-        <div class="item-foot">
-
-          <div class="item-date">
-
-            ${escaparHTML(dataFormatada)}
-
-            ${
-              rel
-                ? `
-                  <span class="rel">
-                    · ${escaparHTML(rel)}
-                  </span>
-                `
-                : ''
+            if (!evento) {
+                continue;
             }
 
-          </div>
+            const tipo = String(
+                evento.tipo || ""
+            ).toLowerCase();
 
 
-          ${linkMoodle}
-
-        </div>
-
-      </article>
-
-    `;
-
-  }
-
-
-  /*
-   * ============================================================
-   * RENDERIZAR
-   * ============================================================
-   */
-
-  function renderizar(){
-
-    const termo =
-      els.search.value
-        .trim()
-        .toLowerCase();
+            /*
+             * Ignora tipos desconhecidos.
+             */
+            if (
+                tipo !== "due" &&
+                tipo !== "open" &&
+                tipo !== "close"
+            ) {
+                continue;
+            }
 
 
-    /*
-     * Busca somente dentro dos eventos
-     * que já foram filtrados como close.
-     */
-
-    const filtrados =
-      eventos.filter(ev => {
-
-        const nome =
-          String(
-            ev.nome || ''
-          ).toLowerCase();
+            const chave = obterChaveAtividade(evento);
 
 
-        const disciplina =
-          String(
-            ev.disciplina || ''
-          ).toLowerCase();
+            if (!grupos.has(chave)) {
+                grupos.set(chave, []);
+            }
+
+            grupos.get(chave).push(evento);
+        }
 
 
-        return (
-          !termo ||
-          nome.includes(termo) ||
-          disciplina.includes(termo)
-        );
-
-      });
+        const resultado = [];
 
 
-    /*
-     * ==========================================================
-     * ESTATÍSTICAS
-     * ==========================================================
-     */
+        for (const eventosDaAtividade of grupos.values()) {
 
-    els.statTotal.textContent =
-      eventos.length;
-
-
-    const agora =
-      Date.now() / 1000;
-
-
-    const atrasadas =
-      eventos.filter(ev => {
-
-        const ts =
-          obterTimestamp(ev);
-
-        return (
-          ts &&
-          ts < agora
-        );
-
-      }).length;
+            /*
+             * Procura o prazo real.
+             */
+            const eventosDue =
+                eventosDaAtividade.filter(
+                    evento =>
+                        String(evento.tipo || "")
+                            .toLowerCase() === "due"
+                );
 
 
-    els.statLate.textContent =
-      atrasadas;
+            /*
+             * Se existe due, ele é o evento
+             * que representa a atividade.
+             */
+            if (eventosDue.length > 0) {
+
+                eventosDue.sort(
+                    (a, b) =>
+                        Number(a.timestamp || a.timesort || 0) -
+                        Number(b.timestamp || b.timesort || 0)
+                );
+
+                resultado.push(eventosDue[0]);
+
+                continue;
+            }
 
 
-    const semanaFim =
-      inicioDoDia(7);
+            /*
+             * Se só existem open/close,
+             * não mostramos no painel.
+             */
+        }
 
 
-    const naSemana =
-      eventos.filter(ev => {
-
-        const ts =
-          obterTimestamp(ev);
-
-
-        return (
-          ts >= agora &&
-          ts < semanaFim
-        );
-
-      }).length;
-
-
-    els.statWeek.textContent =
-      naSemana;
-
-
-    const futuras =
-      eventos
-        .filter(ev =>
-          obterTimestamp(ev) >
-          agora
-        )
-        .sort(
-          (a,b) =>
-            obterTimestamp(a) -
-            obterTimestamp(b)
-        );
-
-
-    if (futuras.length){
-
-      const d =
-        new Date(
-          obterTimestamp(
-            futuras[0]
-          ) * 1000
-        );
-
-
-      els.statNext.textContent =
-        new Intl.DateTimeFormat(
-          'pt-BR',
-          {
-            timeZone:
-              'America/Sao_Paulo',
-
-            day:'2-digit',
-            month:'2-digit'
-          }
-        ).format(d);
-
-    }else{
-
-      els.statNext.textContent =
-        '—';
-
+        return resultado;
     }
 
 
     /*
-     * ==========================================================
-     * VAZIO
-     * ==========================================================
+     * Verifica se uma atividade já foi enviada.
+     *
+     * Isso deixa o HTML preparado para quando
+     * o backend começar a registrar:
+     *
+     * enviado: true
+     *
+     * notificacao_enviada: true
+     *
+     * status: "enviado"
      */
+    function foiEnviada(evento) {
 
-    if (!filtrados.length){
+        if (!evento) {
+            return false;
+        }
 
-      els.groups.innerHTML = `
 
-        <div class="empty">
+        if (
+            evento.enviado === true ||
+            evento.notificacao_enviada === true
+        ) {
+            return true;
+        }
 
-          <h2>
-            Nada por aqui
-          </h2>
 
-          <p>
-            Não há encerramentos pendentes
-            para exibir.
-          </p>
+        if (
+            String(evento.status || "")
+                .toLowerCase() === "enviado"
+        ) {
+            return true;
+        }
 
-        </div>
 
-      `;
-
-      return;
-
+        return false;
     }
 
 
     /*
-     * ==========================================================
-     * AGRUPAR
-     * ==========================================================
+     * Calcula o estado do prazo.
      */
+    function obterEstado(evento) {
 
-    const grupos = {};
+        const timestamp =
+            Number(
+                evento.timestamp ||
+                evento.timesort ||
+                0
+            );
 
 
-    for (
-      const ev
-      of filtrados
-    ){
+        if (!timestamp) {
 
-      const g =
-        grupoDe(
-          obterTimestamp(ev)
+            return {
+                classe: "badge-normal",
+                texto: "Sem data"
+            };
+        }
+
+
+        const agora = Date.now();
+
+        const dataEntrega =
+            timestamp * 1000;
+
+        const diferenca =
+            dataEntrega - agora;
+
+
+        /*
+         * Prazo já passou.
+         */
+        if (diferenca < 0) {
+
+            const dias =
+                Math.floor(
+                    Math.abs(diferenca) /
+                    (1000 * 60 * 60 * 24)
+                );
+
+
+            if (dias === 0) {
+
+                return {
+                    classe: "badge-atrasado",
+                    texto: "Atrasado hoje"
+                };
+            }
+
+
+            return {
+                classe: "badge-atrasado",
+                texto:
+                    `${dias} dia${dias === 1 ? "" : "s"} de atraso`
+            };
+        }
+
+
+        /*
+         * Até 7 dias.
+         */
+        const diasRestantes =
+            Math.ceil(
+                diferenca /
+                (1000 * 60 * 60 * 24)
+            );
+
+
+        if (diasRestantes <= 7) {
+
+            if (diasRestantes <= 1) {
+
+                return {
+                    classe: "badge-proximo",
+                    texto: "Entrega amanhã"
+                };
+            }
+
+
+            return {
+                classe: "badge-proximo",
+                texto:
+                    `Entrega em ${diasRestantes} dias`
+            };
+        }
+
+
+        return {
+            classe: "badge-normal",
+            texto: "Prazo futuro"
+        };
+    }
+
+
+    /*
+     * Formata a diferença para mostrar no card.
+     */
+    function obterTextoPrazo(evento) {
+
+        const timestamp =
+            Number(
+                evento.timestamp ||
+                evento.timesort ||
+                0
+            );
+
+
+        if (!timestamp) {
+            return "Prazo não informado";
+        }
+
+
+        const diferenca =
+            (timestamp * 1000) - Date.now();
+
+
+        if (diferenca < 0) {
+
+            const dias =
+                Math.floor(
+                    Math.abs(diferenca) /
+                    (1000 * 60 * 60 * 24)
+                );
+
+
+            if (dias === 0) {
+                return "Prazo encerrado hoje";
+            }
+
+
+            return `${dias} dia${dias === 1 ? "" : "s"} de atraso`;
+        }
+
+
+        const dias =
+            Math.ceil(
+                diferenca /
+                (1000 * 60 * 60 * 24)
+            );
+
+
+        if (dias === 0) {
+            return "Entrega hoje";
+        }
+
+
+        if (dias === 1) {
+            return "Entrega amanhã";
+        }
+
+
+        return `Entrega em ${dias} dias`;
+    }
+
+
+    /*
+     * Agrupa atividades por data.
+     */
+    function agruparPorData(eventos) {
+
+        const grupos = {};
+
+
+        for (const evento of eventos) {
+
+            const timestamp =
+                Number(
+                    evento.timestamp ||
+                    evento.timesort ||
+                    0
+                );
+
+
+            const chave =
+                timestamp
+                    ? formatarSomenteData(timestamp)
+                    : "Data não informada";
+
+
+            if (!grupos[chave]) {
+                grupos[chave] = [];
+            }
+
+
+            grupos[chave].push(evento);
+        }
+
+
+        return grupos;
+    }
+
+
+    /*
+     * Ordena as atividades pela data do prazo.
+     */
+    function ordenarEventos(eventos) {
+
+        return [...eventos].sort(
+            (a, b) => {
+
+                const dataA =
+                    Number(
+                        a.timestamp ||
+                        a.timesort ||
+                        0
+                    );
+
+                const dataB =
+                    Number(
+                        b.timestamp ||
+                        b.timesort ||
+                        0
+                    );
+
+                return dataA - dataB;
+            }
+        );
+    }
+
+
+    /*
+     * Atualiza os números do painel.
+     */
+    function atualizarResumo(eventos) {
+
+        const agora =
+            Date.now();
+
+
+        const limiteSeteDias =
+            agora +
+            (7 * 24 * 60 * 60 * 1000);
+
+
+        const atrasadas =
+            eventos.filter(evento => {
+
+                const timestamp =
+                    Number(
+                        evento.timestamp ||
+                        evento.timesort ||
+                        0
+                    );
+
+                return (
+                    timestamp &&
+                    timestamp * 1000 < agora
+                );
+
+            }).length;
+
+
+        const proximos =
+            eventos.filter(evento => {
+
+                const timestamp =
+                    Number(
+                        evento.timestamp ||
+                        evento.timesort ||
+                        0
+                    );
+
+                if (!timestamp) {
+                    return false;
+                }
+
+                const data =
+                    timestamp * 1000;
+
+                return (
+                    data >= agora &&
+                    data <= limiteSeteDias
+                );
+
+            }).length;
+
+
+        document.getElementById("total")
+            .textContent = eventos.length;
+
+
+        document.getElementById("atrasadas")
+            .textContent = atrasadas;
+
+
+        document.getElementById("proximos")
+            .textContent = proximos;
+
+
+        /*
+         * Próxima entrega.
+         */
+        const futuras =
+            eventos
+                .filter(evento => {
+
+                    const timestamp =
+                        Number(
+                            evento.timestamp ||
+                            evento.timesort ||
+                            0
+                        );
+
+                    return (
+                        timestamp &&
+                        timestamp * 1000 >= agora
+                    );
+
+                })
+                .sort(
+                    (a, b) =>
+                        Number(
+                            a.timestamp ||
+                            a.timesort ||
+                            0
+                        ) -
+                        Number(
+                            b.timestamp ||
+                            b.timesort ||
+                            0
+                        )
+                );
+
+
+        if (futuras.length > 0) {
+
+            const timestamp =
+                Number(
+                    futuras[0].timestamp ||
+                    futuras[0].timesort ||
+                    0
+                );
+
+
+            document.getElementById("proxima")
+                .textContent =
+                formatarSomenteData(timestamp);
+
+        } else {
+
+            document.getElementById("proxima")
+                .textContent = "—";
+        }
+    }
+
+
+    /*
+     * Renderiza os cards.
+     */
+    function renderizar(eventos) {
+
+        const lista =
+            document.getElementById("lista");
+
+
+        if (!eventos.length) {
+
+            lista.innerHTML = `
+                <div class="empty">
+                    <div class="empty-title">
+                        Nenhuma atividade encontrada
+                    </div>
+
+                    <div class="empty-text">
+                        Não existem atividades com prazo
+                        para exibir no momento.
+                    </div>
+                </div>
+            `;
+
+            return;
+        }
+
+
+        const grupos =
+            agruparPorData(eventos);
+
+
+        let html = "";
+
+
+        for (const [data, eventosDaData] of Object.entries(grupos)) {
+
+            const ordenados =
+                ordenarEventos(eventosDaData);
+
+
+            html += `
+                <section class="date-group">
+
+                    <div class="date-title">
+                        ${data}
+                    </div>
+            `;
+
+
+            for (const evento of ordenados) {
+
+                const estado =
+                    obterEstado(evento);
+
+
+                const timestamp =
+                    Number(
+                        evento.timestamp ||
+                        evento.timesort ||
+                        0
+                    );
+
+
+                const dataHora =
+                    timestamp
+                        ? formatarDataHora(timestamp)
+                        : "Data não informada";
+
+
+                const nome =
+                    evento.nome ||
+                    "Atividade sem nome";
+
+
+                const disciplina =
+                    evento.disciplina ||
+                    "Disciplina não identificada";
+
+
+                const url =
+                    evento.url ||
+                    "";
+
+
+                const textoPrazo =
+                    obterTextoPrazo(evento);
+
+
+                html += `
+                    <article
+                        class="event-card"
+                        data-search="
+                            ${nome.toLowerCase()}
+                            ${disciplina.toLowerCase()}
+                        "
+                    >
+
+                        <div class="event-top">
+
+                            <div class="event-info">
+
+                                <h2 class="event-name">
+                                    ${escaparHTML(nome)}
+                                </h2>
+
+                                <div class="event-course">
+                                    ${escaparHTML(disciplina)}
+                                </div>
+
+                                <div class="event-date">
+                                    <strong>Prazo:</strong>
+                                    ${escaparHTML(dataHora)}
+                                </div>
+
+                            </div>
+
+                            <div class="event-right">
+
+                                <span class="badge ${estado.classe}">
+                                    ${escaparHTML(textoPrazo)}
+                                </span>
+
+                                ${
+                                    url
+                                        ? `
+                                            <a
+                                                class="event-link"
+                                                href="${escaparAtributo(url)}"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                            >
+                                                Abrir no Moodle
+                                            </a>
+                                        `
+                                        : ""
+                                }
+
+                            </div>
+
+                        </div>
+
+                    </article>
+                `;
+            }
+
+
+            html += `
+                </section>
+            `;
+        }
+
+
+        lista.innerHTML = html;
+    }
+
+
+    /*
+     * Protege textos vindos do JSON antes
+     * de inseri-los no HTML.
+     */
+    function escaparHTML(texto) {
+
+        return String(texto)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+
+    /*
+     * Protege URLs utilizadas nos atributos HTML.
+     */
+    function escaparAtributo(texto) {
+
+        return String(texto)
+            .replace(/&/g, "&amp;")
+            .replace(/"/g, "&quot;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;");
+    }
+
+
+    /*
+     * Aplica pesquisa.
+     */
+    function aplicarPesquisa() {
+
+        const termo =
+            document.getElementById("search")
+                .value
+                .trim()
+                .toLowerCase();
+
+
+        const cards =
+            document.querySelectorAll(".event-card");
+
+
+        cards.forEach(card => {
+
+            const texto =
+                card
+                    .getAttribute("data-search")
+                    .toLowerCase();
+
+
+            if (!termo || texto.includes(termo)) {
+
+                card.style.display = "";
+
+            } else {
+
+                card.style.display = "none";
+            }
+
+        });
+
+
+        /*
+         * Esconde grupos de datas que ficaram
+         * sem nenhum card após a pesquisa.
+         */
+        document
+            .querySelectorAll(".date-group")
+            .forEach(grupo => {
+
+                const cardsVisiveis =
+                    Array.from(
+                        grupo.querySelectorAll(".event-card")
+                    )
+                    .some(
+                        card =>
+                            card.style.display !== "none"
+                    );
+
+
+                grupo.style.display =
+                    cardsVisiveis
+                        ? ""
+                        : "none";
+            });
+    }
+
+
+    /*
+     * Carrega eventos.json.
+     */
+    async function carregarEventos() {
+
+        const lista =
+            document.getElementById("lista");
+
+
+        try {
+
+            const resposta =
+                await fetch(
+                    "eventos.json?" +
+                    Date.now(),
+                    {
+                        cache: "no-store"
+                    }
+                );
+
+
+            if (!resposta.ok) {
+
+                throw new Error(
+                    `HTTP ${resposta.status}`
+                );
+            }
+
+
+            const dados =
+                await resposta.json();
+
+
+            if (!Array.isArray(dados)) {
+
+                throw new Error(
+                    "eventos.json não contém uma lista."
+                );
+            }
+
+
+            /*
+             * Primeiro remove duplicações entre
+             * open/due/close.
+             */
+            let eventos =
+                normalizarAtividades(dados);
+
+
+            /*
+             * Depois remove eventos que futuramente
+             * estiverem marcados como enviados.
+             */
+            eventos =
+                eventos.filter(
+                    evento =>
+                        !foiEnviada(evento)
+                );
+
+
+            /*
+             * Ordena por prazo.
+             */
+            eventos =
+                ordenarEventos(eventos);
+
+
+            todosEventos =
+                eventos;
+
+
+            atualizarResumo(eventos);
+
+            renderizar(eventos);
+
+
+            document.getElementById("statusText")
+                .textContent =
+                `${eventos.length} atividade${
+                    eventos.length === 1
+                        ? ""
+                        : "s"
+                } encontrada${
+                    eventos.length === 1
+                        ? ""
+                        : "s"
+                }`;
+
+
+        } catch (erro) {
+
+            console.error(
+                "Erro ao carregar eventos:",
+                erro
+            );
+
+
+            lista.innerHTML = `
+                <div class="error">
+                    Não foi possível carregar
+                    as atividades.
+                    <br><br>
+                    Erro: ${escaparHTML(erro.message)}
+                </div>
+            `;
+
+
+            document.getElementById("statusText")
+                .textContent =
+                "Erro ao atualizar atividades.";
+        }
+    }
+
+
+    /*
+     * Pesquisa em tempo real.
+     */
+    document
+        .getElementById("search")
+        .addEventListener(
+            "input",
+            aplicarPesquisa
         );
 
 
-      (
-        grupos[g] ??= []
-      ).push(ev);
-
-    }
+    /*
+     * Inicialização.
+     */
+    carregarEventos();
 
 
     /*
-     * Ordenar cada grupo
-     * pela data de encerramento.
+     * Atualiza automaticamente a cada 60 segundos.
      */
-
-    for (
-      const lista
-      of Object.values(grupos)
-    ){
-
-      lista.sort(
-        (a,b) =>
-          obterTimestamp(a) -
-          obterTimestamp(b)
-      );
-
-    }
-
-
-    /*
-     * ==========================================================
-     * MONTAR HTML
-     * ==========================================================
-     */
-
-    els.groups.innerHTML =
-
-      ORDEM_GRUPOS
-
-        .filter(
-          g =>
-            grupos[g.id]?.length
-        )
-
-        .map(g => `
-
-          <section
-            class="group ${
-              g.late
-                ? 'is-late'
-                : ''
-            }"
-          >
-
-            <div class="group-head">
-
-              <h2>
-                ${g.titulo}
-              </h2>
-
-              <span class="count">
-                ${grupos[g.id].length}
-              </span>
-
-            </div>
-
-
-            <div class="timeline">
-
-              ${
-                grupos[g.id]
-                  .map(itemHTML)
-                  .join('')
-              }
-
-            </div>
-
-          </section>
-
-        `)
-
-        .join('');
-
-  }
-
-
-  /*
-   * ============================================================
-   * CARREGAR JSON
-   * ============================================================
-   */
-
-  async function carregar(){
-
-    mostrarStatus(
-      'Carregando eventos...'
+    setInterval(
+        carregarEventos,
+        60 * 1000
     );
-
-
-    els.refresh.disabled =
-      true;
-
-
-    els.refresh.classList.add(
-      'loading'
-    );
-
-
-    try{
-
-      const resposta =
-        await fetch(
-          `eventos.json?t=${Date.now()}`
-        );
-
-
-      if (!resposta.ok){
-
-        throw new Error(
-          `HTTP ${resposta.status}`
-        );
-
-      }
-
-
-      const dados =
-        await resposta.json();
-
-
-      if (!Array.isArray(dados)){
-
-        throw new Error(
-          'eventos.json não contém uma lista.'
-        );
-
-      }
-
-
-      /*
-       * Aqui acontece o filtro principal.
-       *
-       * eventos.json pode conter:
-       *
-       * open
-       * due
-       * close
-       *
-       * O painel recebe tudo,
-       * mas prepararEventos()
-       * deixa passar somente close.
-       */
-
-      eventos =
-        prepararEventos(dados);
-
-
-      esconderStatus();
-
-
-      renderizar();
-
-
-    }catch(erro){
-
-      console.error(erro);
-
-
-      mostrarStatus(
-        'Não foi possível carregar o eventos.json. Abra o painel por um servidor (ou GitHub Pages), não diretamente pelo arquivo.',
-        true
-      );
-
-
-      els.groups.innerHTML =
-        '';
-
-
-    }finally{
-
-      els.refresh.disabled =
-        false;
-
-
-      els.refresh.classList.remove(
-        'loading'
-      );
-
-    }
-
-  }
-
-
-  /*
-   * ============================================================
-   * EVENTOS DA INTERFACE
-   * ============================================================
-   */
-
-  els.search.addEventListener(
-    'input',
-    renderizar
-  );
-
-
-  els.refresh.addEventListener(
-    'click',
-    carregar
-  );
-
-
-  /*
-   * ============================================================
-   * INICIALIZAÇÃO
-   * ============================================================
-   */
-
-  carregar();
 
 </script>
 
