@@ -1,950 +1,352 @@
-import re
 import json
-from urllib.parse import urlparse, parse_qs
+import os
+from pathlib import Path
 
-import requests
-from bs4 import BeautifulSoup
+from moodle import MoodleClient
 
 
-class MoodleClient:
+# Garante que o arquivo fique na raiz do repositório,
+# independentemente do diretório de onde o Python for executado.
+BASE_DIR = Path(__file__).resolve().parent
+HISTORICO_FILE = BASE_DIR / "eventos.json"
 
-    BASE_URL = "https://ava.fiep.digital"
 
-    LOGIN_PAGE = (
-        "/theme/badiumview/controller.php"
-        "?_key=badiumview.factory.theme.fiep.app.login.index"
-        "&_operation=apppage"
-    )
+def carregar_historico():
 
-    LOGIN_SERVICE = "/theme/badiumview/controller.php"
-
-    def __init__(self, username, password):
-        self.username = username
-        self.password = password
-
-        self.session = requests.Session()
-
-        self.session.headers.update({
-            "User-Agent": (
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/153.0.0.0 Safari/537.36"
-            ),
-            "Accept-Language": "pt-BR,pt;q=0.9,en;q=0.8",
-        })
-
-        self.sesskey = None
-
-    def login(self):
-        print("Acessando página de login do Sistema Fiep...")
-
-        login_page_url = self.BASE_URL + self.LOGIN_PAGE
-
-        response = self.session.get(
-            login_page_url,
-            timeout=30
-        )
+    if not HISTORICO_FILE.exists():
 
         print(
-            f"Página de login carregada: "
-            f"HTTP {response.status_code}"
+            "ℹ️ Arquivo eventos.json ainda não existe."
         )
 
-        response.raise_for_status()
+        return []
 
-        print("Enviando autenticação para o Sistema Fiep...")
+    try:
 
-        payload = {
-            "_key": (
-                "badiumview.factory.theme.fiep."
-                "app.login.service.exec"
-            ),
-            "_operation": "ws",
-            "username": self.username,
-            "password": self.password,
-        }
+        with open(
+            HISTORICO_FILE,
+            "r",
+            encoding="utf-8"
+        ) as arquivo:
 
-        headers = {
-            "Accept": "application/json, text/plain, */*",
-            "Content-Type": "application/json",
-            "Origin": self.BASE_URL,
-            "Referer": login_page_url,
-            "X-Requested-With": "XMLHttpRequest",
-        }
+            dados = json.load(arquivo)
 
-        response = self.session.post(
-            self.BASE_URL + self.LOGIN_SERVICE,
-            json=payload,
-            headers=headers,
-            timeout=30
-        )
+            if isinstance(dados, list):
 
-        print(
-            f"Resposta do login: "
-            f"HTTP {response.status_code}"
-        )
+                return dados
 
-        response.raise_for_status()
-
-        try:
-            data = response.json()
-
-        except Exception:
-            raise RuntimeError(
-                "A resposta do login não retornou JSON válido."
+            print(
+                "⚠️ eventos.json não contém uma lista válida."
             )
 
-        if data.get("status") != "accept":
-
-            raise RuntimeError(
-                f"Login recusado pelo Sistema Fiep: {data}"
-            )
-
-        print("✅ Login aceito pelo Sistema Fiep.")
-
-        message = data.get("message") or {}
-
-        urlgoback = message.get(
-            "urlgoback",
-            self.BASE_URL + "/my/"
-        )
-
-        print("Redirecionando para o Moodle...")
-
-        authenticated = self.session.get(
-            urlgoback,
-            timeout=30
-        )
-
-        print(
-            f"Página autenticada: "
-            f"HTTP {authenticated.status_code}"
-        )
-
-        authenticated.raise_for_status()
-
-        print(
-            f"URL final: "
-            f"{authenticated.url}"
-        )
-
-        if "/my/" not in authenticated.url:
-
-            raise RuntimeError(
-                "O redirecionamento não chegou à "
-                "página autenticada do Moodle."
-            )
-
-        print("✅ Sessão Moodle autenticada.")
-
-        self.sesskey = self._extract_sesskey(
-            authenticated.text
-        )
-
-        if not self.sesskey:
-
-            raise RuntimeError(
-                "Não foi possível encontrar o sesskey."
-            )
-
-        print("✅ Sesskey encontrado.")
-
-        return True
-
-    def _extract_sesskey(self, html):
-
-        patterns = [
-            r'M\.cfg\.sesskey\s*=\s*[\'"]([^\'"]+)',
-            r'"sesskey"\s*:\s*"([^"]+)"',
-            r"'sesskey'\s*:\s*'([^']+)'",
-            r'name=["\']sesskey["\']\s+value=["\']([^"\']+)',
-            r'sesskey=([^&"\']+)',
-        ]
-
-        for pattern in patterns:
-
-            match = re.search(
-                pattern,
-                html,
-                re.IGNORECASE
-            )
-
-            if match:
-                return match.group(1)
-
-        soup = BeautifulSoup(
-            html,
-            "html.parser"
-        )
-
-        input_element = soup.find(
-            "input",
-            {
-                "name": "sesskey"
-            }
-        )
-
-        if input_element:
-
-            return input_element.get(
-                "value"
-            )
-
-        return None
-
-    def _ajax_request(
-        self,
-        methodname,
-        args
-    ):
-
-        if not self.sesskey:
-
-            raise RuntimeError(
-                "Sesskey não disponível."
-            )
-
-        url = (
-            f"{self.BASE_URL}/lib/ajax/service.php"
-            f"?sesskey={self.sesskey}"
-            f"&info={methodname}"
-        )
-
-        payload = [
-            {
-                "index": 0,
-                "methodname": methodname,
-                "args": args,
-            }
-        ]
-
-        response = self.session.post(
-            url,
-            json=payload,
-            headers={
-                "Accept": "application/json",
-                "Content-Type": "application/json",
-                "X-Requested-With": "XMLHttpRequest",
-            },
-            timeout=30
-        )
-
-        response.raise_for_status()
-
-        data = response.json()
-
-        if not isinstance(data, list) or not data:
-
-            raise RuntimeError(
-                f"Resposta inesperada do Moodle: {data}"
-            )
-
-        result = data[0]
-
-        if result.get("error"):
-
-            raise RuntimeError(
-                f"Erro no Moodle: {result}"
-            )
-
-        return result.get("data")
-
-    def get_courses(self):
-
-        methodname = (
-            "core_course_get_enrolled_courses_by_"
-            "timeline_classification"
-        )
-
-        args = {
-            "offset": 0,
-            "limit": 0,
-            "classification": "allincludinghidden",
-            "sort": "fullname",
-            "customfieldname": "",
-            "customfieldvalue": "",
-        }
-
-        data = self._ajax_request(
-            methodname,
-            args
-        )
-
-        if not data:
             return []
 
-        return data.get(
-            "courses",
-            []
-        )
-
-    def get_calendar_events(self):
-
-        methodname = (
-            "core_calendar_get_action_events_by_timesort"
-        )
-
-        args = {
-            "timesortfrom": 0,
-            "limitnum": 50,
-            "limittononsuspendedevents": True,
-        }
-
-        data = self._ajax_request(
-            methodname,
-            args
-        )
-
-        if not data:
-            return []
-
-        return data.get(
-            "events",
-            []
-        )
-
-    def _extract_cmid_from_url(self, url):
-
-        if not url:
-            return None
-
-        try:
-
-            parsed = urlparse(url)
-
-            params = parse_qs(
-                parsed.query
-            )
-
-            values = params.get(
-                "id"
-            )
-
-            if not values:
-                return None
-
-            return int(
-                values[0]
-            )
-
-        except Exception:
-
-            return None
-
-    def get_course_module(self, cmid):
-
-        if not cmid:
-            return None
-
-        methodname = "core_course_get_course_module"
-
-        args = {
-            "cmid": int(cmid),
-        }
-
-        print()
-        print(
-            f"      🔎 Consultando informações "
-            f"do módulo CMID {cmid}..."
-        )
-
-        try:
-
-            data = self._ajax_request(
-                methodname,
-                args
-            )
-
-        except Exception as erro:
-
-            print(
-                f"      ❌ Erro ao consultar módulo: "
-                f"{erro}"
-            )
-
-            return None
+    except json.JSONDecodeError:
 
         print(
-            "      📦 Resposta do módulo:"
+            "⚠️ eventos.json está vazio ou possui JSON inválido."
         )
 
-        try:
+        return []
 
-            print(
-                json.dumps(
-                    data,
-                    ensure_ascii=False,
-                    indent=2
-                )
-            )
+    except Exception as erro:
 
-        except Exception:
-
-            print(
-                repr(data)
-            )
-
-        if not data:
-            return None
-
-        if isinstance(
-            data,
-            dict
-        ):
-
-            if isinstance(
-                data.get("cm"),
-                dict
-            ):
-
-                return data.get(
-                    "cm"
-                )
-
-            return data
-
-        return None
-
-    def get_submission_status(
-        self,
-        assignid
-    ):
-
-        if not assignid:
-            return None
-
-        methodname = (
-            "mod_assign_get_submission_status"
-        )
-
-        args = {
-            "assignid": int(assignid),
-            "userid": 0,
-        }
-
-        print()
-        print("=" * 70)
         print(
-            "RESPOSTA BRUTA DO STATUS DA ENTREGA"
+            f"⚠️ Não foi possível ler o histórico: "
+            f"{erro}"
         )
+
+        return []
+
+
+def salvar_historico(eventos):
+
+    try:
+
+        with open(
+            HISTORICO_FILE,
+            "w",
+            encoding="utf-8"
+        ) as arquivo:
+
+            json.dump(
+                eventos,
+                arquivo,
+                ensure_ascii=False,
+                indent=2
+            )
+
+            arquivo.write("\n")
+
         print(
-            f"Assignment ID: {assignid}"
-        )
-        print(
-            f"Arguments: {args}"
-        )
-        print("=" * 70)
-
-        try:
-
-            data = self._ajax_request(
-                methodname,
-                args
-            )
-
-        except Exception as erro:
-
-            print(
-                f"❌ ERRO AO CONSULTAR STATUS: "
-                f"{erro}"
-            )
-
-            print("=" * 70)
-
-            return None
-
-        try:
-
-            print(
-                json.dumps(
-                    data,
-                    ensure_ascii=False,
-                    indent=2
-                )
-            )
-
-        except Exception:
-
-            print(
-                repr(data)
-            )
-
-        print("=" * 70)
-        print(
-            "FIM DA RESPOSTA"
-        )
-        print("=" * 70)
-
-        return data
-
-    def _get_submission_state(
-        self,
-        data
-    ):
-
-        if not isinstance(
-            data,
-            dict
-        ):
-
-            return None
-
-        possible_objects = []
-
-        lastattempt = data.get(
-            "lastattempt"
-        )
-
-        if isinstance(
-            lastattempt,
-            dict
-        ):
-
-            possible_objects.append(
-                lastattempt
-            )
-
-            submission = lastattempt.get(
-                "submission"
-            )
-
-            if isinstance(
-                submission,
-                dict
-            ):
-
-                possible_objects.append(
-                    submission
-                )
-
-        status = data.get(
-            "status"
-        )
-
-        if isinstance(
-            status,
-            dict
-        ):
-
-            possible_objects.append(
-                status
-            )
-
-            submission = status.get(
-                "submission"
-            )
-
-            if isinstance(
-                submission,
-                dict
-            ):
-
-                possible_objects.append(
-                    submission
-                )
-
-        submission = data.get(
-            "submission"
-        )
-
-        if isinstance(
-            submission,
-            dict
-        ):
-
-            possible_objects.append(
-                submission
-            )
-
-        for obj in possible_objects:
-
-            for key in (
-                "status",
-                "workflowstate",
-                "state",
-            ):
-
-                value = obj.get(
-                    key
-                )
-
-                if isinstance(
-                    value,
-                    str
-                ):
-
-                    value = value.lower().strip()
-
-                    if value:
-
-                        return value
-
-        return None
-
-    def is_assignment_submitted(
-        self,
-        event
-    ):
-
-        url = event.get(
-            "url",
-            ""
-        )
-
-        print()
-        print(
-            f"   🔗 URL da atividade: {url}"
-        )
-
-        cmid = self._extract_cmid_from_url(
-            url
+            f"💾 Histórico salvo em: "
+            f"{HISTORICO_FILE}"
         )
 
         print(
-            f"   🆔 CMID encontrado: {cmid}"
+            f"💾 Total de eventos no histórico: "
+            f"{len(eventos)}"
         )
 
-        if not cmid:
-
-            print(
-                "   ⚠️ Não foi possível identificar "
-                "o CMID."
-            )
-
-            return False
-
-        module = self.get_course_module(
-            cmid
-        )
-
-        if not module:
-
-            print(
-                "   ⚠️ Não foi possível obter "
-                "os dados estruturados do módulo."
-            )
-
-            return False
-
-        modname = (
-            module.get("modname")
-            or module.get("modulename")
-            or ""
-        )
-
-        modname = str(
-            modname
-        ).lower()
-
-        assignid = (
-            module.get("instance")
-            or module.get("instanceid")
-        )
+    except Exception as erro:
 
         print(
-            f"   🧩 Tipo do módulo: "
-            f"{modname or 'não identificado'}"
+            f"❌ Erro ao salvar eventos.json: "
+            f"{erro}"
         )
 
-        print(
-            f"   🆔 Instance: "
-            f"{assignid or 'não identificado'}"
-        )
+        raise
 
-        if modname != "assign":
 
-            print(
-                "   ℹ️ Não é uma atividade "
-                "mod_assign."
-            )
+def criar_chave_evento(evento):
 
-            return False
+    if evento.get("id"):
 
-        if not assignid:
+        return f"id:{evento['id']}"
 
-            print(
-                "   ⚠️ Não foi possível encontrar "
-                "o instance ID da atividade."
-            )
+    return "|".join([
+        evento.get("nome", ""),
+        evento.get("disciplina", ""),
+        str(evento.get("timestamp", "")),
+        evento.get("url", ""),
+    ])
 
-            return False
 
-        data = self.get_submission_status(
-            assignid
-        )
+def main():
 
-        if not data:
+    print()
+    print("=" * 50)
+    print("          NOTIFICADOR MOODLE")
+    print("=" * 50)
 
-            print(
-                "   ⚠️ Moodle não retornou "
-                "dados de submissão."
-            )
-
-            return False
-
-        state = self._get_submission_state(
-            data
-        )
-
-        print()
-        print(
-            f"   📌 Estado identificado: "
-            f"{state or 'NÃO IDENTIFICADO'}"
-        )
-
-        if state in (
-            "submitted",
-            "graded",
-            "returned",
-        ):
-
-            return True
-
-        return False
-
-    def get_normalized_events(self):
-
-        events = self.get_calendar_events()
-
-        normalized = []
-
-        for event in events:
-
-            event_id = event.get(
-                "id"
-            )
-
-            name = (
-                event.get("name")
-                or event.get("formattedtime")
-                or "Evento sem nome"
-            )
-
-            course = event.get(
-                "course"
-            )
-
-            if isinstance(
-                course,
-                dict
-            ):
-
-                course_id = course.get(
-                    "id"
-                )
-
-                course_name = (
-                    course.get("fullname")
-                    or course.get("fullnamedisplay")
-                    or course.get("shortname")
-                    or ""
-                )
-
-            else:
-
-                course_id = None
-
-                course_name = (
-                    event.get("coursename")
-                    or course
-                    or ""
-                )
-
-            timestart = event.get(
-                "timestart"
-            )
-
-            timesort = event.get(
-                "timesort"
-            )
-
-            url = (
-                event.get("url")
-                or event.get("urltoevent")
-                or ""
-            )
-
-            event_type = (
-                event.get("eventtype")
-                or event.get("modulename")
-                or event.get("component")
-                or ""
-            )
-
-            normalized_event = {
-                "id": (
-                    str(event_id)
-                    if event_id
-                    else ""
-                ),
-                "nome": name,
-                "disciplina": course_name,
-                "curso_id": course_id,
-                "timestamp": timestart,
-                "timesort": timesort,
-                "tipo": event_type,
-                "url": url,
-            }
-
-            normalized.append(
-                normalized_event
-            )
-
-        return normalized
-
-    def test_submission(self):
-
-        print()
-        print("=" * 70)
-        print(
-            "       DIAGNÓSTICO DE ENTREGA MOODLE"
-        )
-        print("=" * 70)
-
-        self.login()
-
-        print()
-        print(
-            "Consultando eventos do calendário..."
-        )
-
-        events = self.get_normalized_events()
-
-        print(
-            f"📅 Total de eventos: "
-            f"{len(events)}"
-        )
-
-        due_events = []
-
-        for event in events:
-
-            event_type = str(
-                event.get("tipo")
-                or ""
-            ).lower()
-
-            if event_type == "due":
-
-                due_events.append(
-                    event
-                )
-
-        print(
-            f"📋 Eventos due encontrados: "
-            f"{len(due_events)}"
-        )
-
-        if not due_events:
-
-            print(
-                "❌ Nenhum evento due encontrado."
-            )
-
-            return
-
-        print()
-
-        for index, event in enumerate(
-            due_events,
-            start=1
-        ):
-
-            print(
-                "=" * 70
-            )
-
-            print(
-                f"ATIVIDADE {index}"
-            )
-
-            print(
-                "=" * 70
-            )
-
-            print(
-                f"Nome: {event.get('nome')}"
-            )
-
-            print(
-                f"Disciplina: "
-                f"{event.get('disciplina')}"
-            )
-
-            print(
-                f"ID do evento: "
-                f"{event.get('id')}"
-            )
-
-            print(
-                f"URL: "
-                f"{event.get('url')}"
-            )
-
-            print()
-
-            submitted = self.is_assignment_submitted(
-                event
-            )
-
-            print()
-
-            if submitted:
-
-                print(
-                    "🟢 RESULTADO: "
-                    "ATIVIDADE IDENTIFICADA COMO ENVIADA"
-                )
-
-            else:
-
-                print(
-                    "🟡 RESULTADO: "
-                    "ATIVIDADE NÃO FOI IDENTIFICADA COMO ENVIADA"
-                )
-
-            print()
-
-        print(
-            "=" * 70
-        )
-
-        print(
-            "Fim do diagnóstico."
-        )
-
-        print(
-            "=" * 70
-        )
-
-
-if __name__ == "__main__":
-
-    import os
-
-    username = os.getenv(
-        "MOODLE_USER"
+    print()
+    print(
+        f"📁 Arquivo de histórico: "
+        f"{HISTORICO_FILE}"
     )
 
-    password = os.getenv(
-        "MOODLE_PASSWORD"
-    )
+    username = os.getenv("MOODLE_USER")
+    password = os.getenv("MOODLE_PASSWORD")
 
     if not username:
 
-        raise RuntimeError(
-            "MOODLE_USER não configurado."
+        print(
+            "❌ MOODLE_USER não configurado."
         )
+
+        return
 
     if not password:
 
-        raise RuntimeError(
-            "MOODLE_PASSWORD não configurado."
+        print(
+            "❌ MOODLE_PASSWORD não configurado."
         )
+
+        return
 
     client = MoodleClient(
         username=username,
         password=password
     )
 
-    client.test_submission()
+    try:
+
+        print()
+        print("Consultando Moodle...")
+
+        client.login()
+
+        print()
+        print(
+            "Moodle autenticado com sucesso."
+        )
+
+        print()
+        print("Consultando disciplinas...")
+
+        courses = client.get_courses()
+
+        print(
+            f"📚 Disciplinas encontradas: "
+            f"{len(courses)}"
+        )
+
+        for course in courses:
+
+            fullname = course.get(
+                "fullname",
+                "Sem nome"
+            )
+
+            shortname = course.get(
+                "shortname",
+                ""
+            )
+
+            course_id = course.get(
+                "id",
+                ""
+            )
+
+            print(
+                f"   • {fullname}"
+                f" | {shortname}"
+                f" | ID: {course_id}"
+            )
+
+        print()
+        print(
+            "Consultando eventos do calendário..."
+        )
+
+        eventos = client.get_normalized_events()
+
+        print(
+            f"📅 Eventos encontrados: "
+            f"{len(eventos)}"
+        )
+
+        historico = carregar_historico()
+
+        print()
+        print(
+            f"🗂️ Eventos já registrados: "
+            f"{len(historico)}"
+        )
+
+        chaves_historico = {
+            criar_chave_evento(evento)
+            for evento in historico
+        }
+
+        novos_eventos = []
+
+        for evento in eventos:
+
+            chave = criar_chave_evento(evento)
+
+            if chave not in chaves_historico:
+
+                novos_eventos.append(
+                    evento
+                )
+
+        print(
+            f"🆕 Novos eventos encontrados: "
+            f"{len(novos_eventos)}"
+        )
+
+        if novos_eventos:
+
+            print()
+            print("=" * 50)
+            print("          NOVOS EVENTOS")
+            print("=" * 50)
+
+            for evento in novos_eventos:
+
+                print()
+                print(
+                    f"🆕 {evento['nome']}"
+                )
+
+                print(
+                    f"   📚 Disciplina: "
+                    f"{evento['disciplina'] or 'Não identificada'}"
+                )
+
+                print(
+                    f"   🆔 ID: "
+                    f"{evento['id']}"
+                )
+
+                print(
+                    f"   📅 Timestamp: "
+                    f"{evento['timestamp']}"
+                )
+
+                print(
+                    f"   🔗 URL: "
+                    f"{evento['url'] or 'Não disponível'}"
+                )
+
+        else:
+
+            print()
+            print(
+                "ℹ️ Nenhum evento novo."
+            )
+
+        # Recria o histórico usando a chave do evento.
+        # Isso evita duplicações.
+        historico_por_chave = {}
+
+        for evento in historico:
+
+            chave = criar_chave_evento(
+                evento
+            )
+
+            historico_por_chave[chave] = evento
+
+        # Adiciona/atualiza os eventos encontrados
+        # nesta execução.
+        for evento in eventos:
+
+            chave = criar_chave_evento(
+                evento
+            )
+
+            historico_por_chave[chave] = evento
+
+        novo_historico = list(
+            historico_por_chave.values()
+        )
+
+        salvar_historico(
+            novo_historico
+        )
+
+        # Confirma que o arquivo realmente existe
+        # depois da gravação.
+        if HISTORICO_FILE.exists():
+
+            tamanho = HISTORICO_FILE.stat().st_size
+
+            print(
+                f"✅ eventos.json confirmado."
+            )
+
+            print(
+                f"📦 Tamanho do arquivo: "
+                f"{tamanho} bytes"
+            )
+
+        else:
+
+            raise RuntimeError(
+                "eventos.json não foi criado após "
+                "a tentativa de salvamento."
+            )
+
+    except Exception as erro:
+
+        print()
+        print("=" * 50)
+        print("❌ ERRO")
+        print("=" * 50)
+
+        print(
+            f"{type(erro).__name__}: {erro}"
+        )
+
+        raise
+
+    print()
+    print("=" * 50)
+    print("Fim da verificação.")
+    print("=" * 50)
+
+
+if __name__ == "__main__":
+    main()
