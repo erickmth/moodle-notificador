@@ -1,5 +1,6 @@
 import json
 import os
+import time
 from pathlib import Path
 
 from moodle import MoodleClient
@@ -112,6 +113,58 @@ def criar_chave_evento(evento):
     ])
 
 
+def marcar_eventos_enviados(client, eventos):
+
+    print()
+    print("Verificando quais atividades já foram entregues...")
+
+    agora = int(time.time())
+
+    for evento in eventos:
+
+        tipo = str(evento.get("tipo") or "").lower()
+
+        # Só faz sentido checar entrega de prazos ('due').
+        # Enquetes, aberturas e encerramentos ficam como False.
+        if tipo != "due":
+
+            evento.setdefault("enviado", False)
+
+            continue
+
+        # Se o prazo já passou há mais de 7 dias,
+        # não vale a pena gastar requisição no Moodle.
+        timestamp = int(evento.get("timestamp") or 0)
+
+        if timestamp and timestamp < agora - 7 * 86400:
+
+            evento.setdefault("enviado", False)
+
+            continue
+
+        try:
+
+            enviado = client.is_assignment_submitted(evento)
+
+        except Exception as erro:
+
+            print(
+                f"   ⚠️ Não foi possível checar "
+                f"'{evento.get('nome')}': {erro}"
+            )
+
+            enviado = bool(evento.get("enviado", False))
+
+        evento["enviado"] = bool(enviado)
+
+        print(
+            f"   {'✅' if enviado else '⏳'} "
+            f"{evento.get('nome')}"
+        )
+
+    return eventos
+
+
 def main():
 
     print()
@@ -206,6 +259,8 @@ def main():
             f"{len(eventos)}"
         )
 
+        eventos = marcar_eventos_enviados(client, eventos)
+
         historico = carregar_historico()
 
         print()
@@ -270,6 +325,11 @@ def main():
                     f"{evento['url'] or 'Não disponível'}"
                 )
 
+                print(
+                    f"   📬 Enviado: "
+                    f"{'Sim' if evento.get('enviado') else 'Não'}"
+                )
+
         else:
 
             print()
@@ -278,7 +338,7 @@ def main():
             )
 
         # Recria o histórico usando a chave do evento.
-        # Isso evita duplicações.
+        # Isso evita duplicações e atualiza o campo 'enviado'.
         historico_por_chave = {}
 
         for evento in historico:
@@ -290,7 +350,7 @@ def main():
             historico_por_chave[chave] = evento
 
         # Adiciona/atualiza os eventos encontrados
-        # nesta execução.
+        # nesta execução (já com 'enviado' preenchido).
         for evento in eventos:
 
             chave = criar_chave_evento(
