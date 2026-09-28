@@ -96,28 +96,6 @@
         /* ==========================================================
            3. SISTEMA FIEP BAR + SITE HEADER
            ========================================================== */
-        .system-bar {
-            background: var(--blue-950);
-            color: #cfd9e6;
-            font-size: 13px;
-        }
-        .system-bar .container {
-            display: flex;
-            gap: var(--space-3);
-            min-height: 36px;
-            align-items: center;
-            overflow-x: auto;
-            scrollbar-width: none;
-        }
-        .system-bar .container::-webkit-scrollbar { display: none; }
-        .system-bar a {
-            text-decoration: none;
-            white-space: nowrap;
-            padding: 8px 0;
-            transition: color .2s;
-        }
-        .system-bar a:hover { color: #fff; text-decoration: underline; }
-
         .site-header {
             position: sticky;
             top: 0;
@@ -150,31 +128,6 @@
         }
         .nav a:hover { color: var(--blue-700); border-bottom-color: var(--red); }
         .nav a[aria-current="page"] { border-bottom-color: var(--red); }
-        .nav .nav-cta {
-            background: var(--blue-900);
-            color: #fff;
-            border-radius: var(--radius);
-            border-bottom: 0;
-            margin-left: var(--space-1);
-        }
-        .nav .nav-cta:hover { background: var(--blue-700); color: #fff; }
-
-        .menu-toggle {
-            display: none;
-            width: 44px; height: 44px;
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            background: #fff;
-            color: var(--blue-900);
-            cursor: pointer;
-            align-items: center;
-            justify-content: center;
-        }
-        .menu-toggle svg { width: 22px; height: 22px; }
-        .menu-toggle .icon-close { display: none; }
-        .menu-toggle[aria-expanded="true"] .icon-open { display: none; }
-        .menu-toggle[aria-expanded="true"] .icon-close { display: block; }
-
         /* ==========================================================
            4. HERO + SUMMARY
            ========================================================== */
@@ -412,59 +365,37 @@
         }
         .footer-main {
             display: flex;
-            justify-content: space-between;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
             gap: var(--space-4);
-            padding: var(--space-4) 0;
+            padding: var(--space-4) 0 var(--space-3);
         }
         .footer-brand img { height: 40px; width: auto; }
-        .footer-cols { display: flex; gap: var(--space-5); flex-wrap: wrap; }
-        .footer-cols h2 {
-            margin: 0 0 12px;
-            color: #fff;
-            font-size: 15px;
-            font-weight: 700;
+        .footer-brand-fiep {
+            background: #fff;
+            border-radius: var(--radius);
+            padding: 8px 14px;
         }
-        .footer-cols ul { list-style: none; margin: 0; padding: 0; }
-        .footer-cols a {
-            display: inline-block;
-            padding: 6px 0;
-            text-decoration: none;
-        }
-        .footer-cols a:hover { color: #fff; text-decoration: underline; }
+        .footer-brand-fiep img { height: 32px; }
         .footer-legal {
             border-top: 1px solid rgba(255, 255, 255, .15);
             padding: var(--space-2) 0;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 4px var(--space-3);
             font-size: 13px;
             color: #a9b9cd;
         }
-        .footer-legal a { text-decoration: none; }
-        .footer-legal a:hover { text-decoration: underline; color: #fff; }
 
         /* ==========================================================
            8. RESPONSIVE
            ========================================================== */
         @media (max-width: 900px) {
-            .menu-toggle { display: inline-flex; }
-            .nav {
-                display: none;
-                position: absolute;
-                left: 0; right: 0; top: 100%;
-                flex-direction: column;
-                align-items: stretch;
-                gap: 0;
-                background: #fff;
-                border-bottom: 1px solid var(--border);
-                padding: 8px 20px 16px;
-                box-shadow: 0 8px 16px rgba(0, 31, 64, .1);
-            }
-            .nav.is-open { display: flex; }
-            .nav a { min-height: 48px; border-bottom: 1px solid var(--border); padding: 0 4px; }
-            .nav .nav-cta { margin: 12px 0 0; justify-content: center; border-bottom: 0; }
-
             .summary { grid-template-columns: repeat(2, 1fr); }
             .summary-card:nth-child(3) { padding-left: 0; border-left: 0; }
             .summary-card:nth-child(n+3) { border-top: 1px solid rgba(255, 255, 255, .25); margin-top: var(--space-3); }
-            .footer-main { flex-direction: column; }
         }
 
         @media (max-width: 650px) {
@@ -476,7 +407,8 @@
             .event-top { flex-direction: column; gap: 14px; }
             .event-right { width: 100%; align-items: flex-start; }
             .event-link { width: 100%; }
-            .footer-cols { gap: var(--space-3) var(--space-4); }
+            .footer-main { gap: var(--space-3); }
+            .footer-legal { flex-direction: column; }
         }
 
         @media (prefers-reduced-motion: reduce) {
@@ -489,32 +421,14 @@
 
 <a class="skip-link" href="#lista">Pular para o conteúdo</a>
 
-<div class="system-bar">
-    <div class="container">
-        <a href="https://www.sistemafiep.org.br/" target="_blank" rel="noopener noreferrer">Sistema Fiep</a>
-        <a href="http://www.fiepr.org.br/" target="_blank" rel="noopener noreferrer">Fiep</a>
-        <a href="https://www.sesipr.org.br/" target="_blank" rel="noopener noreferrer">Sesi</a>
-        <a href="https://www.senaipr.org.br/" target="_blank" rel="noopener noreferrer">Senai</a>
-        <a href="https://www.ielpr.org.br/" target="_blank" rel="noopener noreferrer">IEL</a>
-    </div>
-</div>
-
 <header class="site-header">
     <div class="container">
-        <a class="brand" href="https://www.unisenaipr.com.br/" aria-label="UniSenai PR — página inicial">
+        <div class="brand">
             <img src="https://www.unisenaipr.com.br/o/unisenai-theme/images/logo_unisenai.svg" alt="UniSenai PR" width="160" height="40">
-        </a>
-
-        <button class="menu-toggle" id="menuToggle" type="button" aria-expanded="false" aria-controls="mainNav" aria-label="Abrir menu">
-            <svg class="icon-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
-            <svg class="icon-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
-        </button>
+        </div>
 
         <nav class="nav" id="mainNav" aria-label="Navegação principal">
             <a href="#lista" aria-current="page">Prazos</a>
-            <a href="https://www.unisenaipr.com.br/sou-aluno" target="_blank" rel="noopener noreferrer">Sou Aluno</a>
-            <a href="https://www.unisenaipr.com.br/fale-conosco" target="_blank" rel="noopener noreferrer">Fale conosco</a>
-            <a class="nav-cta" href="https://alunos.sesisenaipr.org.br/FrameHTML/Web/App/Edu/PortalEducacional/login" target="_blank" rel="noopener noreferrer">Portal do Aluno</a>
         </nav>
     </div>
 </header>
@@ -595,39 +509,17 @@
 <footer class="site-footer">
     <div class="container">
         <div class="footer-main">
-            <a class="footer-brand" href="https://www.unisenaipr.com.br/" aria-label="UniSenai PR — página inicial">
+            <div class="footer-brand">
                 <img src="https://www.unisenaipr.com.br/o/unisenai-theme/images/logo_unisenai_white.svg" alt="UniSenai PR" width="160" height="40" loading="lazy">
-            </a>
-
-            <div class="footer-cols">
-                <div>
-                    <h2>Portal Acadêmico</h2>
-                    <ul>
-                        <li><a href="https://alunos.sesisenaipr.org.br/FrameHTML/Web/App/Edu/PortalEducacional/login" target="_blank" rel="noopener noreferrer">Portal do Aluno</a></li>
-                        <li><a href="https://docentes.sesisenaipr.org.br/FrameHTML/Web/App/Edu/PortalDoProfessor/#/login" target="_blank" rel="noopener noreferrer">Portal do Professor</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h2>Fale conosco</h2>
-                    <ul>
-                        <li><a href="https://www.unisenaipr.com.br/fale-conosco/contato" target="_blank" rel="noopener noreferrer">Contato</a></li>
-                        <li><a href="https://www.unisenaipr.com.br/fale-conosco/ouvidoria" target="_blank" rel="noopener noreferrer">Ouvidoria</a></li>
-                        <li><a href="https://www.unisenaipr.com.br/fale-conosco/perguntas-frequentes" target="_blank" rel="noopener noreferrer">Dúvidas frequentes</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h2>Informações</h2>
-                    <ul>
-                        <li><a href="https://www.unisenaipr.com.br/sou-aluno" target="_blank" rel="noopener noreferrer">Para Aluno</a></li>
-                        <li><a href="https://www.unisenaipr.com.br/sou-aluno/biblioteca" target="_blank" rel="noopener noreferrer">Biblioteca</a></li>
-                    </ul>
-                </div>
+            </div>
+            <div class="footer-brand footer-brand-fiep">
+                <img src="https://www.sistemafiep.org.br/dbimages/logo-sistema-fiep_270815_img.png" alt="Sistema Fiep" height="32" loading="lazy">
             </div>
         </div>
 
         <div class="footer-legal">
-            Sistema Fiep - Sistema Federação das Indústrias do Estado do Paraná - Direitos Reservados.
-            Av. Cândido de Abreu, 200 - Centro Cívico - 80530-902 - Curitiba-PR
+            <span>&copy; <span id="anoAtual"></span> Erick Matheus Legisamon</span>
+            <span>Desenvolvido por Erick Matheus Legisamon - Eng. Mecatrônica</span>
         </div>
     </div>
 </footer>
@@ -1881,31 +1773,7 @@
 </script>
 
 <script>
-    (function () {
-        const botao = document.getElementById("menuToggle");
-        const menu = document.getElementById("mainNav");
-
-        function alternar(abrir) {
-            menu.classList.toggle("is-open", abrir);
-            botao.setAttribute("aria-expanded", String(abrir));
-            botao.setAttribute("aria-label", abrir ? "Fechar menu" : "Abrir menu");
-        }
-
-        botao.addEventListener("click", function () {
-            alternar(!menu.classList.contains("is-open"));
-        });
-
-        menu.addEventListener("click", function (e) {
-            if (e.target.closest("a")) alternar(false);
-        });
-
-        document.addEventListener("keydown", function (e) {
-            if (e.key === "Escape" && menu.classList.contains("is-open")) {
-                alternar(false);
-                botao.focus();
-            }
-        });
-    })();
+    document.getElementById("anoAtual").textContent = new Date().getFullYear();
 </script>
 
 </body>
