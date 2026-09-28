@@ -17,7 +17,8 @@
     "timestamp": 1790823600,
     "timesort": 1790823600,
     "tipo": "due",
-    "url": "https://ava.fiep.digital/mod/assign/view.php?id=1293219"
+    "url": "https://ava.fiep.digital/mod/assign/view.php?id=1293219",
+    "enviado": false
   },
   {
     "id": "1870043",
@@ -37,7 +38,8 @@
     "timestamp": 1790823600,
     "timesort": 1790823600,
     "tipo": "due",
-    "url": "https://ava.fiep.digital/mod/assign/view.php?id=1294653"
+    "url": "https://ava.fiep.digital/mod/assign/view.php?id=1294653",
+    "enviado": false
   },
   {
     "id": "1881973",
@@ -67,6 +69,7 @@
     "timestamp": 1790909940,
     "timesort": 1790909940,
     "tipo": "due",
-    "url": "https://ava.fiep.digital/mod/assign/view.php?id=1300767"
+    "url": "https://ava.fiep.digital/mod/assign/view.php?id=1300767",
+    "enviado": false
   }
 ]
