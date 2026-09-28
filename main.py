@@ -1,5 +1,7 @@
 import json
 import os
+import re
+import time
 from pathlib import Path
 
 from moodle import MoodleClient
@@ -112,6 +114,110 @@ def criar_chave_evento(evento):
     ])
 
 
+def limpar_nome_atividade(nome):
+
+    if not nome:
+        return "Atividade sem nome"
+
+    nome = str(nome)
+
+    # "... está marcado(a) para esta data"
+    nome = re.sub(
+        r"\s*est[áa]\s+marcado\(a\)\s+para\s+esta\s+data\s*$",
+        "",
+        nome,
+        flags=re.IGNORECASE
+    )
+
+    # Variação sem o "(a)"
+    nome = re.sub(
+        r"\s*est[áa]\s+marcado\s+para\s+esta\s+data\s*$",
+        "",
+        nome,
+        flags=re.IGNORECASE
+    )
+
+    # "... deve estar concluído"
+    nome = re.sub(
+        r"\s*deve\s+estar\s+conclu[íi]do\s*$",
+        "",
+        nome,
+        flags=re.IGNORECASE
+    )
+
+    # "(Abertura da enquete)" / "(Encerramento da enquete)"
+    nome = re.sub(
+        r"\s*\((abertura|encerramento)\s+da\s+enquete\)\s*$",
+        "",
+        nome,
+        flags=re.IGNORECASE
+    )
+
+    return nome.strip()
+
+
+def limpar_disciplina(disciplina):
+
+    if not disciplina:
+        return ""
+
+    # O fullname do curso no Moodle vem assim:
+    # "Química dos Materiais | 2026/2 | Gerencial | GRB.00007"
+    # Mantém só a primeira parte.
+    return str(disciplina).split("|")[0].strip()
+
+
+def marcar_eventos_enviados(client, eventos):
+
+    print()
+    print("Verificando quais atividades já foram entregues...")
+
+    agora = int(time.time())
+
+    for evento in eventos:
+
+        tipo = str(evento.get("tipo") or "").lower()
+
+        # Só faz sentido checar entrega de prazos ('due').
+        if tipo != "due":
+
+            evento.setdefault("enviado", False)
+
+            continue
+
+        # Se o prazo já passou há mais de 7 dias,
+        # não vale a pena gastar requisição no Moodle.
+        timestamp = int(evento.get("timestamp") or 0)
+
+        if timestamp and timestamp < agora - 7 * 86400:
+
+            evento.setdefault("enviado", False)
+
+            continue
+
+        try:
+
+            enviado = client.is_assignment_submitted(evento)
+
+        except Exception as erro:
+
+            print(
+                f"   ⚠️ Não foi possível checar "
+                f"'{evento.get('nome')}': {erro}"
+            )
+
+            enviado = bool(evento.get("enviado", False))
+
+        evento["enviado"] = bool(enviado)
+
+        print(
+            f"   {'✅' if enviado else '⏳'} "
+            f"{evento.get('nome')}"
+        )
+
+    return eventos
+
+
 def main():
 
     print()
@@ -204,6 +310,11 @@ def main():
         print(
             f"📅 Eventos encontrados: "
             f"{len(eventos)}"
+        )
+
+        eventos = marcar_eventos_enviados(
+            client,
+            eventos
         )
 
         historico = carregar_historico()
@@ -302,6 +413,18 @@ def main():
         novo_historico = list(
             historico_por_chave.values()
         )
+
+        # Limpa os nomes e disciplinas somente no momento
+        # de salvar, para não quebrar a chave usada acima.
+        for evento in novo_historico:
+
+            evento["nome"] = limpar_nome_atividade(
+                evento.get("nome")
+            )
+
+            evento["disciplina"] = limpar_disciplina(
+                evento.get("disciplina")
+            )
 
         salvar_historico(
             novo_historico
