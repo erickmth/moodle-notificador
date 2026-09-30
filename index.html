@@ -11,9 +11,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 
     <style>
-        /* ==========================================================
-           1. TOKENS
-           ========================================================== */
+        /* 1. TOKENS */
         :root {
             --blue-950: #001f40;
             --blue-900: #002f5f;
@@ -40,12 +38,9 @@
             --font: "Open Sans", "Segoe UI", Roboto, Arial, sans-serif;
         }
 
-        /* ==========================================================
-           2. BASE
-           ========================================================== */
+        /* 2. BASE */
         * { box-sizing: border-box; }
         html { scroll-behavior: smooth; }
-
         body {
             margin: 0;
             background: var(--bg);
@@ -56,87 +51,94 @@
             -webkit-font-smoothing: antialiased;
             overflow-x: hidden;
         }
-
         img { max-width: 100%; display: block; }
         a { color: inherit; }
+        :focus-visible { outline: 3px solid #f2a900; outline-offset: 2px; }
 
-        :focus-visible {
-            outline: 3px solid #f2a900;
-            outline-offset: 2px;
-        }
-
-        .container {
-            width: min(1200px, calc(100% - 40px));
-            margin: 0 auto;
-        }
+        .container { width: min(1200px, calc(100% - 40px)); margin: 0 auto; }
 
         .visually-hidden {
-            position: absolute;
-            width: 1px; height: 1px;
-            margin: -1px; padding: 0;
-            overflow: hidden;
-            clip: rect(0 0 0 0);
-            white-space: nowrap;
-            border: 0;
+            position: absolute; width: 1px; height: 1px;
+            margin: -1px; padding: 0; overflow: hidden;
+            clip: rect(0 0 0 0); white-space: nowrap; border: 0;
         }
 
         .skip-link {
-            position: absolute;
-            left: 16px; top: -60px;
-            z-index: 100;
-            background: #fff;
-            color: var(--blue-900);
-            padding: 10px 16px;
-            font-weight: 700;
-            border-radius: var(--radius);
-            transition: top .2s;
+            position: absolute; left: 16px; top: -60px; z-index: 100;
+            background: #fff; color: var(--blue-900);
+            padding: 10px 16px; font-weight: 700;
+            border-radius: var(--radius); transition: top .2s;
         }
         .skip-link:focus { top: 12px; }
 
-        /* ==========================================================
-           3. SISTEMA FIEP BAR + SITE HEADER
-           ========================================================== */
+        /* 3. HEADER */
         .site-header {
-            position: sticky;
-            top: 0;
-            z-index: 50;
-            background: #fff;
-            border-bottom: 1px solid var(--border);
+            position: sticky; top: 0; z-index: 50;
+            background: #fff; border-bottom: 1px solid var(--border);
         }
         .site-header .container {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: var(--space-3);
-            min-height: 76px;
+            display: flex; align-items: center; justify-content: space-between;
+            gap: var(--space-3); min-height: 76px;
         }
         .brand { display: inline-flex; flex-shrink: 0; }
         .brand img { height: 40px; width: auto; }
-
         .nav { display: flex; align-items: center; gap: var(--space-1); }
         .nav a {
-            display: inline-flex;
-            align-items: center;
-            min-height: 44px;
-            padding: 0 14px;
-            color: var(--blue-900);
-            font-weight: 600;
-            font-size: 15px;
-            text-decoration: none;
+            display: inline-flex; align-items: center; min-height: 44px;
+            padding: 0 14px; color: var(--blue-900); font-weight: 600;
+            font-size: 15px; text-decoration: none;
             border-bottom: 3px solid transparent;
             transition: color .2s, border-color .2s;
         }
         .nav a:hover { color: var(--blue-700); border-bottom-color: var(--red); }
         .nav a[aria-current="page"] { border-bottom-color: var(--red); }
-        /* ==========================================================
-           4. HERO + SUMMARY
-           ========================================================== */
-        .hero {
-            background: var(--blue-900);
-            color: #fff;
-            border-bottom: 4px solid var(--red);
-        }
+
+        /* 4. HERO + ASSISTENTE + RESUMO */
+        .hero { background: var(--blue-900); color: #fff; border-bottom: 4px solid var(--red); }
         .hero-inner { padding: var(--space-5) 0 var(--space-4); }
+
+        .assistant {
+            display: flex;
+            align-items: flex-start;
+            gap: var(--space-2);
+            margin-bottom: var(--space-4);
+        }
+        .assistant-avatar {
+            flex-shrink: 0;
+            width: 48px; height: 48px;
+            display: grid; place-items: center;
+            border-radius: 50%;
+            background: #fff;
+            color: var(--blue-900);
+            border-bottom: 3px solid var(--red);
+        }
+        .assistant-avatar svg { width: 24px; height: 24px; }
+        .assistant-body { min-width: 0; }
+        .assistant-greeting {
+            margin: 0 0 6px;
+            font-size: clamp(1.5rem, 3.4vw, 2.25rem);
+            font-weight: 800;
+            line-height: 1.15;
+            letter-spacing: -0.01em;
+        }
+        .assistant-msg {
+            margin: 0;
+            max-width: 62ch;
+            min-height: 3em;
+            font-size: clamp(1rem, 1.6vw, 1.1875rem);
+            color: #d6e2f1;
+        }
+        .assistant-msg strong { color: #fff; font-weight: 700; }
+        .assistant-msg.typing::after {
+            content: "";
+            display: inline-block;
+            width: 2px; height: 1.1em;
+            margin-left: 3px;
+            vertical-align: text-bottom;
+            background: #fff;
+            animation: blink 1s steps(1) infinite;
+        }
+        @keyframes blink { 50% { opacity: 0; } }
 
         .header h1 {
             margin: 0 0 var(--space-1);
@@ -146,263 +148,145 @@
             letter-spacing: -0.02em;
         }
         .header p {
-            margin: 0;
-            max-width: 56ch;
+            margin: 0; max-width: 56ch;
             font-size: clamp(1rem, 1.6vw, 1.25rem);
             color: #d6e2f1;
         }
 
         .summary {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            display: grid; grid-template-columns: repeat(4, 1fr);
             margin-top: var(--space-4);
             border-top: 1px solid rgba(255, 255, 255, .25);
         }
-        .summary-card {
-            padding: var(--space-3) var(--space-3) 0 0;
-            min-width: 0;
-        }
+        .summary-card { padding: var(--space-3) var(--space-3) 0 0; min-width: 0; }
         .summary-card + .summary-card {
             padding-left: var(--space-3);
             border-left: 1px solid rgba(255, 255, 255, .25);
         }
-        .summary-label {
-            color: #b9cbe2;
-            font-size: 14px;
-            font-weight: 600;
-            margin-bottom: 6px;
-        }
+        .summary-label { color: #b9cbe2; font-size: 14px; font-weight: 600; margin-bottom: 6px; }
         .summary-value {
             font-size: clamp(1.75rem, 3.4vw, 2.5rem);
-            font-weight: 700;
-            line-height: 1.1;
-            overflow-wrap: anywhere;
+            font-weight: 700; line-height: 1.1; overflow-wrap: anywhere;
         }
 
-        /* ==========================================================
-           5. TOOLBAR (SEARCH + STATUS)
-           ========================================================== */
+        /* 5. BUSCA + STATUS */
         .content { padding: var(--space-4) 0 var(--space-5); }
-
         .search-area { margin-bottom: var(--space-2); }
         .search-wrap { position: relative; }
         .search-wrap svg {
-            position: absolute;
-            left: 16px; top: 50%;
-            width: 20px; height: 20px;
-            transform: translateY(-50%);
-            color: var(--muted);
-            pointer-events: none;
+            position: absolute; left: 16px; top: 50%;
+            width: 20px; height: 20px; transform: translateY(-50%);
+            color: var(--muted); pointer-events: none;
         }
         .search {
-            width: 100%;
-            height: 52px;
-            border: 1px solid #b7c0cc;
-            border-bottom: 2px solid var(--blue-900);
-            border-radius: var(--radius);
-            background: #fff;
-            color: var(--text);
-            padding: 0 16px 0 46px;
-            font: inherit;
-            font-size: 16px;
+            width: 100%; height: 52px;
+            border: 1px solid #b7c0cc; border-bottom: 2px solid var(--blue-900);
+            border-radius: var(--radius); background: #fff; color: var(--text);
+            padding: 0 16px 0 46px; font: inherit; font-size: 16px;
             transition: border-color .2s, box-shadow .2s;
         }
         .search::placeholder { color: #6b7686; }
         .search:focus {
-            outline: none;
-            border-color: var(--blue-700);
+            outline: none; border-color: var(--blue-700);
             box-shadow: 0 0 0 3px rgba(0, 80, 158, .25);
         }
 
         .status {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: var(--space-2);
-            flex-wrap: wrap;
-            margin-bottom: var(--space-3);
-            padding-bottom: var(--space-2);
+            display: flex; align-items: center; justify-content: space-between;
+            gap: var(--space-2); flex-wrap: wrap;
+            margin-bottom: var(--space-3); padding-bottom: var(--space-2);
             border-bottom: 1px solid var(--border);
         }
         .status-text { color: var(--text); font-size: 14px; font-weight: 600; }
-        .status-indicator {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            color: var(--muted);
-            font-size: 13px;
-        }
-        .status-dot {
-            width: 8px; height: 8px;
-            border-radius: 50%;
-            background: var(--success);
-        }
+        .status-indicator { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); }
 
-        /* ==========================================================
-           6. DEADLINE LIST
-           ========================================================== */
+        /* 6. LISTA */
         .date-group { margin-bottom: var(--space-4); }
-
         .date-title {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 12px;
-            color: var(--blue-900);
-            font-size: 1.125rem;
-            font-weight: 700;
+            display: flex; align-items: center; gap: 12px; margin-bottom: 12px;
+            color: var(--blue-900); font-size: 1.125rem; font-weight: 700;
         }
-        .date-title::before {
-            content: "";
-            width: 4px;
-            height: 20px;
-            background: var(--red);
-        }
+        .date-title::before { content: ""; width: 4px; height: 20px; background: var(--red); }
 
         .event-card {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-left: 4px solid var(--success);
-            border-radius: var(--radius);
-            padding: 20px 24px;
-            margin-bottom: 8px;
+            background: var(--card); border: 1px solid var(--border);
+            border-left: 4px solid var(--success); border-radius: var(--radius);
+            padding: 20px 24px; margin-bottom: 8px;
             transition: border-color .2s, box-shadow .2s;
         }
         .event-card:has(.badge-atrasado) { border-left-color: var(--danger); }
         .event-card:has(.badge-proximo) { border-left-color: #d97706; }
-        .event-card:hover {
-            border-color: #b7c0cc;
-            box-shadow: 0 2px 10px rgba(0, 31, 64, .08);
-        }
+        .event-card:hover { border-color: #b7c0cc; box-shadow: 0 2px 10px rgba(0, 31, 64, .08); }
 
-        .event-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: var(--space-3);
-        }
+        .event-top { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--space-3); }
         .event-info { min-width: 0; flex: 1; }
         .event-name {
-            margin: 0 0 6px;
-            font-size: 1.0625rem;
-            font-weight: 700;
-            line-height: 1.4;
-            color: var(--blue-950);
-            overflow-wrap: anywhere;
+            margin: 0 0 6px; font-size: 1.0625rem; font-weight: 700;
+            line-height: 1.4; color: var(--blue-950); overflow-wrap: anywhere;
         }
-        .event-course {
-            color: var(--muted);
-            font-size: 14px;
-            line-height: 1.4;
-            margin-bottom: 10px;
-        }
+        .event-course { color: var(--muted); font-size: 14px; line-height: 1.4; margin-bottom: 10px; }
         .event-date { color: var(--text); font-size: 14px; }
         .event-date strong { font-weight: 700; }
-
-        .event-right {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-            gap: 10px;
-            flex-shrink: 0;
-        }
+        .event-right { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; flex-shrink: 0; }
 
         .badge {
-            display: inline-flex;
-            align-items: center;
-            padding: 5px 10px;
-            border-radius: var(--radius);
-            font-size: 12px;
-            font-weight: 700;
-            white-space: nowrap;
+            display: inline-flex; align-items: center; padding: 5px 10px;
+            border-radius: var(--radius); font-size: 12px; font-weight: 700; white-space: nowrap;
         }
         .badge-atrasado { color: var(--danger); background: var(--danger-bg); }
         .badge-proximo  { color: var(--warning); background: var(--warning-bg); }
         .badge-normal   { color: var(--success); background: var(--success-bg); }
 
         .event-link {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 44px;
-            padding: 0 20px;
-            border-radius: var(--radius);
-            background: var(--blue-900);
-            color: #fff;
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: 700;
-            transition: background .2s;
+            display: inline-flex; align-items: center; justify-content: center;
+            min-height: 44px; padding: 0 20px; border-radius: var(--radius);
+            background: var(--blue-900); color: #fff; text-decoration: none;
+            font-size: 14px; font-weight: 700; transition: background .2s;
         }
         .event-link:hover { background: var(--blue-700); }
 
         .empty, .loading, .error {
-            background: #fff;
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: var(--space-4) var(--space-3);
-            text-align: center;
+            background: #fff; border: 1px solid var(--border);
+            border-radius: var(--radius); padding: var(--space-4) var(--space-3); text-align: center;
         }
         .empty-title { font-size: 1.0625rem; font-weight: 700; margin-bottom: 6px; }
         .empty-text { color: var(--muted); font-size: 14px; }
         .loading { color: var(--muted); font-size: 15px; }
         .error {
-            background: var(--danger-bg);
-            border-color: #fecdca;
-            border-left: 4px solid var(--danger);
-            color: #7a271a;
-            text-align: left;
-            font-size: 15px;
+            background: var(--danger-bg); border-color: #fecdca;
+            border-left: 4px solid var(--danger); color: #7a271a;
+            text-align: left; font-size: 15px;
         }
 
-        /* ==========================================================
-           7. FOOTER
-           ========================================================== */
-        .site-footer {
-            background: var(--blue-950);
-            color: #cfd9e6;
-            font-size: 14px;
-        }
+        /* 7. FOOTER */
+        .site-footer { background: var(--blue-950); color: #cfd9e6; font-size: 14px; }
         .footer-main {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-wrap: wrap;
-            gap: var(--space-4);
-            padding: var(--space-4) 0 var(--space-3);
+            display: flex; align-items: center; justify-content: center;
+            flex-wrap: wrap; gap: var(--space-4); padding: var(--space-4) 0 var(--space-3);
         }
         .footer-brand img { height: 40px; width: auto; }
-        .footer-brand-fiep {
-            background: #fff;
-            border-radius: var(--radius);
-            padding: 8px 14px;
-        }
+        .footer-brand-fiep { background: #fff; border-radius: var(--radius); padding: 8px 14px; }
         .footer-brand-fiep img { height: 32px; }
         .footer-legal {
-            border-top: 1px solid rgba(255, 255, 255, .15);
-            padding: var(--space-2) 0;
-            display: flex;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 4px var(--space-3);
-            font-size: 13px;
-            color: #a9b9cd;
+            border-top: 1px solid rgba(255, 255, 255, .15); padding: var(--space-2) 0;
+            display: flex; justify-content: space-between; flex-wrap: wrap;
+            gap: 4px var(--space-3); font-size: 13px; color: #a9b9cd;
         }
 
-        /* ==========================================================
-           8. RESPONSIVE
-           ========================================================== */
+        /* 8. RESPONSIVO */
         @media (max-width: 900px) {
             .summary { grid-template-columns: repeat(2, 1fr); }
             .summary-card:nth-child(3) { padding-left: 0; border-left: 0; }
             .summary-card:nth-child(n+3) { border-top: 1px solid rgba(255, 255, 255, .25); margin-top: var(--space-3); }
         }
-
         @media (max-width: 650px) {
             .container { width: min(100% - 32px, 1200px); }
             .site-header .container { min-height: 64px; }
             .brand img { height: 34px; }
             .hero-inner { padding: var(--space-4) 0 var(--space-3); }
+            .assistant { gap: 12px; }
+            .assistant-avatar { width: 40px; height: 40px; }
             .event-card { padding: 16px; }
             .event-top { flex-direction: column; gap: 14px; }
             .event-right { width: 100%; align-items: flex-start; }
@@ -410,9 +294,9 @@
             .footer-main { gap: var(--space-3); }
             .footer-legal { flex-direction: column; }
         }
-
         @media (prefers-reduced-motion: reduce) {
             * { transition: none !important; scroll-behavior: auto !important; }
+            .assistant-msg.typing::after { animation: none; }
         }
     </style>
 </head>
@@ -426,7 +310,6 @@
         <div class="brand">
             <img src="https://www.unisenaipr.com.br/o/unisenai-theme/images/logo_unisenai.svg" alt="UniSenai PR" width="160" height="40">
         </div>
-
         <nav class="nav" id="mainNav" aria-label="Navegação principal">
             <a href="#lista" aria-current="page">Prazos</a>
         </nav>
@@ -436,33 +319,39 @@
 <section class="hero" aria-labelledby="titulo">
     <div class="container hero-inner">
 
+        <!-- Assistente: saudação personalizada -->
+        <div class="assistant">
+            <div class="assistant-avatar" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/><path d="M19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8L19 16z"/></svg>
+            </div>
+            <div class="assistant-body">
+                <p class="assistant-greeting" id="saudacao">Olá, Erick</p>
+                <p class="assistant-msg" id="mensagem" role="status" aria-live="polite">Buscando suas atividades...</p>
+            </div>
+        </div>
+
         <div class="header">
             <h1 id="titulo">Prazos</h1>
             <p>Atividades do AVA, atualizadas automaticamente</p>
         </div>
 
         <div class="summary" role="group" aria-label="Resumo das atividades">
-
             <div class="summary-card">
                 <div class="summary-label">Total de atividades</div>
                 <div class="summary-value" id="total">0</div>
             </div>
-
             <div class="summary-card">
                 <div class="summary-label">Atrasadas</div>
                 <div class="summary-value" id="atrasadas">0</div>
             </div>
-
             <div class="summary-card">
                 <div class="summary-label">Próximos 7 dias</div>
                 <div class="summary-value" id="proximos">0</div>
             </div>
-
             <div class="summary-card">
                 <div class="summary-label">Próxima entrega</div>
                 <div class="summary-value" id="proxima">—</div>
             </div>
-
         </div>
     </div>
 </section>
@@ -473,35 +362,20 @@
         <label class="visually-hidden" for="search">Pesquisar atividade ou disciplina</label>
         <div class="search-wrap">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
-            <input
-                type="text"
-                id="search"
-                class="search"
-                placeholder="Pesquisar atividade ou disciplina..."
-                autocomplete="off"
-            >
+            <input type="text" id="search" class="search" placeholder="Pesquisar atividade ou disciplina..." autocomplete="off">
         </div>
     </section>
 
     <div class="status">
-
-        <div class="status-text" id="statusText" role="status" aria-live="polite">
-            Carregando atividades...
-        </div>
-
+        <div class="status-text" id="statusText" role="status" aria-live="polite">Carregando atividades...</div>
         <div class="status-indicator">
             <span class="status-dot" aria-hidden="true"></span>
             <span>Atualizado automaticamente</span>
         </div>
-
     </div>
 
     <main id="lista">
-
-        <div class="loading">
-            Carregando atividades...
-        </div>
-
+        <div class="loading">Carregando atividades...</div>
     </main>
 
 </div>
@@ -516,7 +390,6 @@
                 <img src="https://www.sistemafiep.org.br/dbimages/logo-sistema-fiep_270815_img.png" alt="Sistema Fiep" height="32" loading="lazy">
             </div>
         </div>
-
         <div class="footer-legal">
             <span>&copy; <span id="anoAtual"></span> Erick Matheus Legisamon</span>
             <span>Desenvolvido por Erick Matheus Legisamon - Eng. Mecatrônica</span>
@@ -525,1027 +398,416 @@
 </footer>
 
 <script>
+    const NOME = "Erick";
+    const FUSO = "America/Sao_Paulo";
+    const reduzMovimento = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     let todosEventos = [];
 
+    /* ==========================================================
+       DATAS
+       ========================================================== */
+    function obterTimestamp(evento) {
+        return Number(evento.timestamp || evento.timesort || 0);
+    }
 
     function formatarDataHora(timestamp) {
-
-        if (!timestamp) {
-            return "Data não informada";
-        }
-
-        const data = new Date(Number(timestamp) * 1000);
-
-        return new Intl.DateTimeFormat(
-            "pt-BR",
-            {
-                timeZone: "America/Sao_Paulo",
-                day: "2-digit",
-                month: "2-digit",
-                year: "numeric",
-                hour: "2-digit",
-                minute: "2-digit"
-            }
-        ).format(data);
+        if (!timestamp) return "Data não informada";
+        return new Intl.DateTimeFormat("pt-BR", {
+            timeZone: FUSO, day: "2-digit", month: "2-digit", year: "numeric",
+            hour: "2-digit", minute: "2-digit"
+        }).format(new Date(Number(timestamp) * 1000));
     }
-
 
     function formatarSomenteData(timestamp) {
-
-        if (!timestamp) {
-            return "Data não informada";
-        }
-
-        const data = new Date(Number(timestamp) * 1000);
-
-        return new Intl.DateTimeFormat(
-            "pt-BR",
-            {
-                timeZone: "America/Sao_Paulo",
-                day: "2-digit",
-                month: "2-digit",
-                year: "numeric"
-            }
-        ).format(data);
+        if (!timestamp) return "Data não informada";
+        return new Intl.DateTimeFormat("pt-BR", {
+            timeZone: FUSO, day: "2-digit", month: "2-digit", year: "numeric"
+        }).format(new Date(Number(timestamp) * 1000));
     }
 
+    function formatarDiaMes(timestamp) {
+        return new Intl.DateTimeFormat("pt-BR", {
+            timeZone: FUSO, day: "2-digit", month: "2-digit"
+        }).format(new Date(Number(timestamp) * 1000));
+    }
 
-    /*
-     * Retorna as partes da data no fuso
-     * de São Paulo.
-     *
-     * Isso evita comparar a data do navegador
-     * com uma data UTC de forma incorreta.
-     */
+    function obterHora(timestampOuData) {
+        const data = timestampOuData instanceof Date
+            ? timestampOuData
+            : new Date(Number(timestampOuData) * 1000);
+        return new Intl.DateTimeFormat("pt-BR", {
+            timeZone: FUSO, hour: "2-digit", minute: "2-digit", hour12: false
+        }).format(data);
+    }
+
+    /* Partes da data no fuso de São Paulo. */
     function obterPartesData(timestamp) {
-
-        const data = new Date(Number(timestamp) * 1000);
-
-        const partes = new Intl.DateTimeFormat(
-            "en-US",
-            {
-                timeZone: "America/Sao_Paulo",
-                year: "numeric",
-                month: "2-digit",
-                day: "2-digit",
-                hour: "2-digit",
-                minute: "2-digit",
-                second: "2-digit",
-                hour12: false
-            }
-        ).formatToParts(data);
-
+        const partes = new Intl.DateTimeFormat("en-US", {
+            timeZone: FUSO, year: "numeric", month: "2-digit", day: "2-digit",
+            hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false
+        }).formatToParts(new Date(Number(timestamp) * 1000));
 
         const resultado = {};
-
         for (const parte of partes) {
-
-            if (parte.type !== "literal") {
-                resultado[parte.type] = Number(parte.value);
-            }
+            if (parte.type !== "literal") resultado[parte.type] = Number(parte.value);
         }
-
-
         return resultado;
     }
 
-
-    /*
-     * Retorna uma chave YYYY-MM-DD
-     * considerando São Paulo.
-     */
-    function obterChaveData(timestamp) {
-
-        const partes =
-            obterPartesData(timestamp);
-
-
-        return [
-            partes.year,
-            String(partes.month).padStart(2, "0"),
-            String(partes.day).padStart(2, "0")
-        ].join("-");
-    }
-
-
-    /*
-     * Cria um objeto Date representando
-     * somente a data do calendário.
-     */
+    /* Date representando somente o dia do calendário (São Paulo). */
     function obterDataCalendario(timestamp) {
-
-        const partes =
-            obterPartesData(timestamp);
-
-
-        return new Date(
-            partes.year,
-            partes.month - 1,
-            partes.day
-        );
+        const p = obterPartesData(timestamp);
+        return new Date(p.year, p.month - 1, p.day);
     }
 
+    /* Diferença em dias de calendário, ignorando o horário. */
+    function diferencaDiasCalendario(dataInicial, dataFinal) {
+        const inicio = new Date(dataInicial.getFullYear(), dataInicial.getMonth(), dataInicial.getDate());
+        const fim = new Date(dataFinal.getFullYear(), dataFinal.getMonth(), dataFinal.getDate());
+        return Math.round((fim.getTime() - inicio.getTime()) / 86400000);
+    }
 
     /*
-     * Retorna a diferença entre duas datas
-     * ignorando o horário.
-     *
-     * Exemplo:
-     *
-     * 22/09 -> 22/09 = 0
-     * 22/09 -> 23/09 = 1
-     * 22/09 -> 24/09 = 2
+     * Situação de uma atividade em relação a agora:
+     * - dias: diferença em dias do calendário (negativo = passado)
+     * - passou: o horário exato já passou
      */
-    function diferencaDiasCalendario(
-        dataInicial,
-        dataFinal
-    ) {
-
-        const inicio =
-            new Date(
-                dataInicial.getFullYear(),
-                dataInicial.getMonth(),
-                dataInicial.getDate()
-            );
-
-
-        const fim =
-            new Date(
-                dataFinal.getFullYear(),
-                dataFinal.getMonth(),
-                dataFinal.getDate()
-            );
-
-
-        const diferenca =
-            fim.getTime() -
-            inicio.getTime();
-
-
-        return Math.round(
-            diferenca /
-            (1000 * 60 * 60 * 24)
-        );
-    }
-
-
-    function obterChaveAtividade(evento) {
-
-        if (evento.url) {
-
-            try {
-
-                const url = new URL(evento.url);
-
-                const id =
-                    url.searchParams.get("id");
-
-                if (id) {
-                    return `moodle-id:${id}`;
-                }
-
-            } catch (erro) {
-                // Continua.
-            }
-        }
-
-
-        if (evento.url) {
-
-            try {
-
-                const url = new URL(evento.url);
-
-                return (
-                    `url:${url.pathname}${url.search}`
-                );
-
-            } catch (erro) {
-                // Continua.
-            }
-        }
-
-
-        const nome =
-            String(evento.nome || "")
-                .toLowerCase()
-                .replace(
-                    /\s+(está|esta)\s+marcado\(a\)\s+para\s+esta\s+data/gi,
-                    ""
-                )
-                .replace(
-                    /\s*\((abertura|encerramento)\s+da\s+enquete\)/gi,
-                    ""
-                )
-                .trim();
-
-
-        return [
-            evento.curso_id || "",
-            evento.disciplina || "",
-            nome
-        ].join("|");
-    }
-
-
-    /*
-     * Mantém somente o prazo real da atividade.
-     *
-     * Se houver:
-     *
-     * open
-     * due
-     * close
-     *
-     * somente o due será mostrado.
-     */
-    function normalizarAtividades(eventos) {
-
-        const grupos = new Map();
-
-
-        for (const evento of eventos) {
-
-            if (!evento) {
-                continue;
-            }
-
-
-            const tipo =
-                String(evento.tipo || "")
-                    .toLowerCase();
-
-
-            if (
-                tipo !== "due" &&
-                tipo !== "open" &&
-                tipo !== "close"
-            ) {
-                continue;
-            }
-
-
-            const chave =
-                obterChaveAtividade(evento);
-
-
-            if (!grupos.has(chave)) {
-                grupos.set(chave, []);
-            }
-
-
-            grupos.get(chave).push(evento);
-        }
-
-
-        const resultado = [];
-
-
-        for (
-            const eventosDaAtividade
-            of grupos.values()
-        ) {
-
-            const eventosDue =
-                eventosDaAtividade.filter(
-                    evento =>
-                        String(evento.tipo || "")
-                            .toLowerCase() === "due"
-                );
-
-
-            if (eventosDue.length > 0) {
-
-                eventosDue.sort(
-                    (a, b) =>
-                        Number(
-                            a.timestamp ||
-                            a.timesort ||
-                            0
-                        ) -
-                        Number(
-                            b.timestamp ||
-                            b.timesort ||
-                            0
-                        )
-                );
-
-
-                resultado.push(
-                    eventosDue[0]
-                );
-            }
-        }
-
-
-        return resultado;
-    }
-
-
-    function foiEnviada(evento) {
-
-        if (!evento) {
-            return false;
-        }
-
-
-        if (
-            evento.enviado === true ||
-            evento.notificacao_enviada === true
-        ) {
-            return true;
-        }
-
-
-        if (
-            String(evento.status || "")
-                .toLowerCase() === "enviado"
-        ) {
-            return true;
-        }
-
-
-        return false;
-    }
-
-
-    /*
-     * Calcula o estado da atividade
-     * usando a data do calendário.
-     *
-     * Isso é importante:
-     *
-     * 22/09 às 19:00
-     * 22/09 às 23:59
-     *
-     * continua sendo HOJE.
-     */
-    function obterEstado(evento) {
-
-        const timestamp =
-            Number(
-                evento.timestamp ||
-                evento.timesort ||
-                0
-            );
-
-
-        if (!timestamp) {
-
-            return {
-                classe: "badge-normal",
-                texto: "Sem data"
-            };
-        }
-
-
-        const agora =
-            new Date();
-
-
-        const dataEntrega =
-            new Date(timestamp * 1000);
-
-
-        const hoje =
-            new Date(
-                agora.getFullYear(),
-                agora.getMonth(),
-                agora.getDate()
-            );
-
-
-        const dataEntregaCalendario =
-            obterDataCalendario(timestamp);
-
-
-        const diferenca =
-            diferencaDiasCalendario(
-                hoje,
-                dataEntregaCalendario
-            );
-
-
-        /*
-         * Prazo em um dia anterior.
-         */
-        if (diferenca < 0) {
-
-            const dias =
-                Math.abs(diferenca);
-
-
-            if (dias === 0) {
-
-                return {
-                    classe: "badge-atrasado",
-                    texto: "Atrasado hoje"
-                };
-            }
-
-
-            return {
-                classe: "badge-atrasado",
-                texto:
-                    `${dias} dia${dias === 1 ? "" : "s"} de atraso`
-            };
-        }
-
-
-        /*
-         * Prazo é hoje.
-         */
-        if (diferenca === 0) {
-
-            return {
-                classe: "badge-proximo",
-                texto:
-                    `Entrega hoje às ${obterHora(dataEntrega)}`
-            };
-        }
-
-
-        /*
-         * Prazo amanhã.
-         */
-        if (diferenca === 1) {
-
-            return {
-                classe: "badge-proximo",
-                texto:
-                    `Entrega amanhã às ${obterHora(dataEntrega)}`
-            };
-        }
-
-
-        /*
-         * Prazo dentro dos próximos 7 dias.
-         */
-        if (diferenca <= 7) {
-
-            return {
-                classe: "badge-proximo",
-                texto:
-                    `Entrega em ${diferenca} dias`
-            };
-        }
-
+    function obterSituacao(evento, agora = new Date()) {
+        const timestamp = obterTimestamp(evento);
+        if (!timestamp) return null;
+
+        const hoje = obterDataCalendario(agora.getTime() / 1000);
+        const dias = diferencaDiasCalendario(hoje, obterDataCalendario(timestamp));
 
         return {
-            classe: "badge-normal",
-            texto: "Prazo futuro"
+            timestamp,
+            dias,
+            passou: timestamp * 1000 < agora.getTime(),
+            dataEntrega: new Date(timestamp * 1000)
         };
     }
 
-
-    /*
-     * Retorna somente HH:MM no horário
-     * de São Paulo.
-     */
-    function obterHora(timestampOuData) {
-
-        const data =
-            timestampOuData instanceof Date
-                ? timestampOuData
-                : new Date(
-                    Number(timestampOuData) * 1000
-                );
-
-
-        return new Intl.DateTimeFormat(
-            "pt-BR",
-            {
-                timeZone: "America/Sao_Paulo",
-                hour: "2-digit",
-                minute: "2-digit",
-                hour12: false
+    /* ==========================================================
+       NORMALIZAÇÃO DOS EVENTOS
+       ========================================================== */
+    function obterChaveAtividade(evento) {
+        if (evento.url) {
+            try {
+                const url = new URL(evento.url);
+                const id = url.searchParams.get("id");
+                if (id) return `moodle-id:${id}`;
+                return `url:${url.pathname}${url.search}`;
+            } catch (erro) {
+                // Continua.
             }
-        ).format(data);
+        }
+
+        const nome = String(evento.nome || "")
+            .toLowerCase()
+            .replace(/\s+(está|esta)\s+marcado\(a\)\s+para\s+esta\s+data/gi, "")
+            .replace(/\s*\((abertura|encerramento)\s+da\s+enquete\)/gi, "")
+            .trim();
+
+        return [evento.curso_id || "", evento.disciplina || "", nome].join("|");
     }
 
-
-    function obterTextoPrazo(evento) {
-
-        const timestamp =
-            Number(
-                evento.timestamp ||
-                evento.timesort ||
-                0
-            );
-
-
-        if (!timestamp) {
-            return "Prazo não informado";
-        }
-
-
-        const agora =
-            new Date();
-
-
-        const dataEntrega =
-            new Date(timestamp * 1000);
-
-
-        const hoje =
-            new Date(
-                agora.getFullYear(),
-                agora.getMonth(),
-                agora.getDate()
-            );
-
-
-        const dataEntregaCalendario =
-            obterDataCalendario(timestamp);
-
-
-        const diferenca =
-            diferencaDiasCalendario(
-                hoje,
-                dataEntregaCalendario
-            );
-
-
-        /*
-         * Prazo já passou no calendário.
-         */
-        if (diferenca < 0) {
-
-            const dias =
-                Math.abs(diferenca);
-
-
-            if (dias === 1) {
-                return "1 dia de atraso";
-            }
-
-
-            return `${dias} dias de atraso`;
-        }
-
-
-        /*
-         * Mesmo dia:
-         *
-         * Só fica atrasado quando o horário
-         * realmente passar.
-         */
-        if (diferenca === 0) {
-
-            if (
-                dataEntrega.getTime() <
-                agora.getTime()
-            ) {
-
-                return "Prazo encerrado hoje";
-            }
-
-
-            return `Entrega hoje às ${obterHora(dataEntrega)}`;
-        }
-
-
-        if (diferenca === 1) {
-
-            return `Entrega amanhã às ${obterHora(dataEntrega)}`;
-        }
-
-
-        if (diferenca <= 7) {
-
-            return `Entrega em ${diferenca} dias`;
-        }
-
-
-        return `Entrega em ${diferenca} dias`;
-    }
-
-
-    function agruparPorData(eventos) {
-
-        const grupos = {};
-
+    /* Mantém somente o prazo real (due) de cada atividade. */
+    function normalizarAtividades(eventos) {
+        const grupos = new Map();
 
         for (const evento of eventos) {
+            if (!evento) continue;
 
-            const timestamp =
-                Number(
-                    evento.timestamp ||
-                    evento.timesort ||
-                    0
-                );
+            const tipo = String(evento.tipo || "").toLowerCase();
+            if (tipo !== "due" && tipo !== "open" && tipo !== "close") continue;
 
-
-            const chave =
-                timestamp
-                    ? formatarSomenteData(timestamp)
-                    : "Data não informada";
-
-
-            if (!grupos[chave]) {
-                grupos[chave] = [];
-            }
-
-
-            grupos[chave].push(evento);
+            const chave = obterChaveAtividade(evento);
+            if (!grupos.has(chave)) grupos.set(chave, []);
+            grupos.get(chave).push(evento);
         }
 
-
-        return grupos;
-    }
-
-
-    function ordenarEventos(eventos) {
-
-        return [...eventos].sort(
-            (a, b) => {
-
-                const dataA =
-                    Number(
-                        a.timestamp ||
-                        a.timesort ||
-                        0
-                    );
-
-
-                const dataB =
-                    Number(
-                        b.timestamp ||
-                        b.timesort ||
-                        0
-                    );
-
-
-                return dataA - dataB;
-            }
-        );
-    }
-
-
-    /*
-     * Atualiza o resumo superior.
-     *
-     * "Próximos 7 dias" agora usa dias do calendário.
-     *
-     * Se hoje é 22/09:
-     *
-     * 22/09 = dentro dos próximos 7 dias
-     * 23/09 = dentro dos próximos 7 dias
-     * ...
-     * 29/09 = dentro dos próximos 7 dias
-     */
-    function atualizarResumo(eventos) {
-
-        const agora =
-            new Date();
-
-
-        const hoje =
-            new Date(
-                agora.getFullYear(),
-                agora.getMonth(),
-                agora.getDate()
-            );
-
-
-        const atrasadas =
-            eventos.filter(evento => {
-
-                const timestamp =
-                    Number(
-                        evento.timestamp ||
-                        evento.timesort ||
-                        0
-                    );
-
-
-                if (!timestamp) {
-                    return false;
-                }
-
-
-                const dataEntrega =
-                    new Date(timestamp * 1000);
-
-
-                const dataCalendario =
-                    obterDataCalendario(timestamp);
-
-
-                const diferenca =
-                    diferencaDiasCalendario(
-                        hoje,
-                        dataCalendario
-                    );
-
-
-                /*
-                 * Só considera atrasada se:
-                 *
-                 * - a data já passou
-                 *
-                 * ou
-                 *
-                 * - é hoje e o horário já passou.
-                 */
-                if (diferenca < 0) {
-                    return true;
-                }
-
-
-                if (diferenca === 0) {
-
-                    return (
-                        dataEntrega.getTime() <
-                        agora.getTime()
-                    );
-                }
-
-
-                return false;
-
-            }).length;
-
-
-        const proximos =
-            eventos.filter(evento => {
-
-                const timestamp =
-                    Number(
-                        evento.timestamp ||
-                        evento.timesort ||
-                        0
-                    );
-
-
-                if (!timestamp) {
-                    return false;
-                }
-
-
-                const dataCalendario =
-                    obterDataCalendario(timestamp);
-
-
-                const diferenca =
-                    diferencaDiasCalendario(
-                        hoje,
-                        dataCalendario
-                    );
-
-
-                return (
-                    diferenca >= 0 &&
-                    diferenca <= 7
-                );
-
-            }).length;
-
-
-        document.getElementById("total")
-            .textContent =
-            eventos.length;
-
-
-        document.getElementById("atrasadas")
-            .textContent =
-            atrasadas;
-
-
-        document.getElementById("proximos")
-            .textContent =
-            proximos;
-
-
-        /*
-         * Próxima entrega.
-         */
-        const futuras =
-            eventos
-                .filter(evento => {
-
-                    const timestamp =
-                        Number(
-                            evento.timestamp ||
-                            evento.timesort ||
-                            0
-                        );
-
-
-                    if (!timestamp) {
-                        return false;
-                    }
-
-
-                    return (
-                        timestamp * 1000 >=
-                        agora.getTime()
-                    );
-
-                })
-                .sort(
-                    (a, b) =>
-                        Number(
-                            a.timestamp ||
-                            a.timesort ||
-                            0
-                        ) -
-                        Number(
-                            b.timestamp ||
-                            b.timesort ||
-                            0
-                        )
-                );
-
-
-        if (futuras.length > 0) {
-
-            const timestamp =
-                Number(
-                    futuras[0].timestamp ||
-                    futuras[0].timesort ||
-                    0
-                );
-
-
-            document.getElementById("proxima")
-                .textContent =
-                formatarSomenteData(timestamp);
-
-        } else {
-
-            document.getElementById("proxima")
-                .textContent =
-                "—";
+        const resultado = [];
+        for (const eventosDaAtividade of grupos.values()) {
+            const eventosDue = eventosDaAtividade
+                .filter(e => String(e.tipo || "").toLowerCase() === "due")
+                .sort((a, b) => obterTimestamp(a) - obterTimestamp(b));
+
+            if (eventosDue.length > 0) resultado.push(eventosDue[0]);
         }
+        return resultado;
     }
 
+    function foiEnviada(evento) {
+        if (!evento) return false;
+        if (evento.enviado === true || evento.notificacao_enviada === true) return true;
+        return String(evento.status || "").toLowerCase() === "enviado";
+    }
 
-    function renderizar(eventos) {
+    /* ==========================================================
+       BADGES / TEXTOS DE PRAZO
+       ========================================================== */
+    function obterEstado(evento) {
+        const s = obterSituacao(evento);
+        if (!s) return { classe: "badge-normal" };
+        if (s.dias < 0 || s.passou) return { classe: "badge-atrasado" };
+        if (s.dias <= 7) return { classe: "badge-proximo" };
+        return { classe: "badge-normal" };
+    }
 
-        const lista =
-            document.getElementById("lista");
+    function obterTextoPrazo(evento) {
+        const s = obterSituacao(evento);
+        if (!s) return "Prazo não informado";
 
+        if (s.dias < 0) {
+            const dias = Math.abs(s.dias);
+            return dias === 1 ? "1 dia de atraso" : `${dias} dias de atraso`;
+        }
+        if (s.dias === 0) {
+            return s.passou
+                ? "Prazo encerrado hoje"
+                : `Entrega hoje às ${obterHora(s.dataEntrega)}`;
+        }
+        if (s.dias === 1) return `Entrega amanhã às ${obterHora(s.dataEntrega)}`;
+        return `Entrega em ${s.dias} dias`;
+    }
 
-        if (!eventos.length) {
+    /* ==========================================================
+       ASSISTENTE (SAUDAÇÃO + MENSAGEM)
+       ========================================================== */
+    function obterPeriodo() {
+        const hora = Number(new Intl.DateTimeFormat("en-US", {
+            timeZone: FUSO, hour: "2-digit", hour12: false
+        }).format(new Date())) % 24;
 
-            lista.innerHTML = `
-                <div class="empty">
+        if (hora < 5)  return "madrugada";
+        if (hora < 12) return "manha";
+        if (hora < 18) return "tarde";
+        return "noite";
+    }
 
-                    <div class="empty-title">
-                        Nenhuma atividade encontrada
-                    </div>
+    const SAUDACOES = {
+        madrugada: [`Boa madrugada, ${NOME}`, `Ainda acordado, ${NOME}?`, `Olá, ${NOME}, madrugada produtiva`],
+        manha:     [`Bom dia, ${NOME}`, `Bom dia, ${NOME}, vamos começar`, `Olá, ${NOME}, bom dia`],
+        tarde:     [`Boa tarde, ${NOME}`, `Boa tarde, ${NOME}, tudo certo?`, `Olá, ${NOME}, boa tarde`],
+        noite:     [`Boa noite, ${NOME}`, `Boa noite, ${NOME}, como foi o dia?`, `Olá, ${NOME}, boa noite`]
+    };
 
-                    <div class="empty-text">
-                        Não existem atividades com prazo
-                        para exibir no momento.
-                    </div>
+    const FECHAMENTOS = {
+        madrugada: ["Não esqueça de descansar.", "Que tal deixar o resto para depois de uma boa noite de sono?"],
+        manha:     ["Bom começo de dia!", "Um passo de cada vez e dá tudo certo."],
+        tarde:     ["Bom ritmo pela tarde!", "Ainda dá tempo de adiantar alguma coisa."],
+        noite:     ["Bom finalzinho de dia!", "Organize a próxima entrega e descanse tranquilo."]
+    };
 
-                </div>
-            `;
+    /* Sorteia uma vez por carregamento, para não trocar a frase a cada atualização. */
+    const sorteio = Math.random();
+    function escolher(lista) {
+        return lista[Math.floor(sorteio * lista.length)];
+    }
 
+    function limparNome(nome) {
+        return String(nome || "Atividade sem nome")
+            .replace(/\s+(está|esta)\s+marcado\(a\)\s+para\s+esta\s+data/gi, "")
+            .replace(/\s*\((abertura|encerramento)\s+da\s+enquete\)/gi, "")
+            .trim();
+    }
+
+    function plural(n, singular, pluralTxt) {
+        return n === 1 ? singular : pluralTxt;
+    }
+
+    /* Retorna HTML seguro (nomes são escapados). */
+    function montarMensagem(eventos) {
+        const periodo = obterPeriodo();
+        const agora = new Date();
+        const total = eventos.length;
+
+        if (total === 0) {
+            return "Você não tem nenhuma atividade pendente no momento. Aproveite o tempo livre!";
+        }
+
+        const itens = eventos
+            .map(e => ({ e, s: obterSituacao(e, agora) }))
+            .filter(x => x.s);
+
+        const atrasadas = itens.filter(x => x.s.passou);
+        const hoje      = itens.filter(x => !x.s.passou && x.s.dias === 0);
+        const proximas  = itens.filter(x => !x.s.passou && x.s.dias > 0);
+
+        const nomeEm = x => `<strong>${escaparHTML(limparNome(x.e.nome))}</strong>`;
+
+        let msg = `Aqui ${plural(total, "está sua atividade pendente", "estão suas " + total + " atividades pendentes")}.`;
+
+        if (atrasadas.length > 0) {
+            const n = atrasadas.length;
+            msg += ` ${n} ${plural(n, "está atrasada", "estão atrasadas")}, comece por ${nomeEm(atrasadas[0])}.`;
+        }
+
+        if (hoje.length > 0) {
+            const n = hoje.length;
+            msg += ` ${n === 1 ? "Hoje vence" : "Hoje vencem " + n + ", a primeira é"} ${nomeEm(hoje[0])} às ${obterHora(hoje[0].s.dataEntrega)}.`;
+        } else if (proximas.length > 0) {
+            const p = proximas[0];
+            const quando = p.s.dias === 1
+                ? `amanhã às ${obterHora(p.s.dataEntrega)}`
+                : p.s.dias <= 7
+                    ? `em ${p.s.dias} dias (${formatarDiaMes(p.s.timestamp)})`
+                    : `no dia ${formatarDiaMes(p.s.timestamp)}`;
+            msg += ` A próxima entrega é ${nomeEm(p)}, ${quando}.`;
+        }
+
+        if (atrasadas.length === 0) {
+            msg += ` ${escolher(FECHAMENTOS[periodo])}`;
+        }
+
+        return msg;
+    }
+
+    let ultimaMensagem = "";
+    let primeiraMensagem = true;
+    let temporizadorDigitacao = null;
+
+    /* Efeito de digitação (só na primeira vez, respeitando reduzir movimento). */
+    function digitar(elemento, html) {
+        clearInterval(temporizadorDigitacao);
+
+        if (reduzMovimento) {
+            elemento.innerHTML = html;
             return;
         }
 
+        const tokens = html.match(/<[^>]+>|[^<]/g) || [];
+        let i = 0;
+        let saida = "";
+        elemento.classList.add("typing");
 
-        const grupos =
-            agruparPorData(eventos);
+        temporizadorDigitacao = setInterval(() => {
+            /* Tags saem inteiras, caracteres um a um. */
+            do {
+                saida += tokens[i++];
+            } while (i < tokens.length && tokens[i - 1].startsWith("<"));
 
+            elemento.innerHTML = saida;
+
+            if (i >= tokens.length) {
+                clearInterval(temporizadorDigitacao);
+                elemento.classList.remove("typing");
+            }
+        }, 18);
+    }
+
+    function atualizarAssistente(eventos) {
+        document.getElementById("saudacao").textContent = escolher(SAUDACOES[obterPeriodo()]);
+
+        const elemento = document.getElementById("mensagem");
+        const mensagem = montarMensagem(eventos);
+
+        if (mensagem === ultimaMensagem) return;
+        ultimaMensagem = mensagem;
+
+        if (primeiraMensagem) {
+            primeiraMensagem = false;
+            digitar(elemento, mensagem);
+        } else {
+            clearInterval(temporizadorDigitacao);
+            elemento.classList.remove("typing");
+            elemento.innerHTML = mensagem;
+        }
+    }
+
+    /* ==========================================================
+       LISTA E RESUMO
+       ========================================================== */
+    function agruparPorData(eventos) {
+        const grupos = {};
+        for (const evento of eventos) {
+            const timestamp = obterTimestamp(evento);
+            const chave = timestamp ? formatarSomenteData(timestamp) : "Data não informada";
+            if (!grupos[chave]) grupos[chave] = [];
+            grupos[chave].push(evento);
+        }
+        return grupos;
+    }
+
+    function ordenarEventos(eventos) {
+        return [...eventos].sort((a, b) => obterTimestamp(a) - obterTimestamp(b));
+    }
+
+    function atualizarResumo(eventos) {
+        const agora = new Date();
+        const situacoes = eventos.map(e => obterSituacao(e, agora)).filter(Boolean);
+
+        const atrasadas = situacoes.filter(s => s.passou).length;
+        const proximos = situacoes.filter(s => s.dias >= 0 && s.dias <= 7).length;
+
+        document.getElementById("total").textContent = eventos.length;
+        document.getElementById("atrasadas").textContent = atrasadas;
+        document.getElementById("proximos").textContent = proximos;
+
+        const futuras = situacoes
+            .filter(s => !s.passou)
+            .sort((a, b) => a.timestamp - b.timestamp);
+
+        document.getElementById("proxima").textContent =
+            futuras.length > 0 ? formatarSomenteData(futuras[0].timestamp) : "—";
+    }
+
+    function renderizar(eventos) {
+        const lista = document.getElementById("lista");
+
+        if (!eventos.length) {
+            lista.innerHTML = `
+                <div class="empty">
+                    <div class="empty-title">Nenhuma atividade encontrada</div>
+                    <div class="empty-text">Não existem atividades com prazo para exibir no momento.</div>
+                </div>`;
+            return;
+        }
 
         let html = "";
 
-
-        for (
-            const [data, eventosDaData]
-            of Object.entries(grupos)
-        ) {
-
-            const ordenados =
-                ordenarEventos(
-                    eventosDaData
-                );
-
-
+        for (const [data, eventosDaData] of Object.entries(agruparPorData(eventos))) {
             html += `
                 <section class="date-group">
+                    <div class="date-title">${escaparHTML(data)}</div>`;
 
-                    <div class="date-title">
-                        ${escaparHTML(data)}
-                    </div>
-            `;
-
-
-            for (const evento of ordenados) {
-
-                const estado =
-                    obterEstado(evento);
-
-
-                const timestamp =
-                    Number(
-                        evento.timestamp ||
-                        evento.timesort ||
-                        0
-                    );
-
-
-                const dataHora =
-                    timestamp
-                        ? formatarDataHora(timestamp)
-                        : "Data não informada";
-
-
-                const nome =
-                    evento.nome ||
-                    "Atividade sem nome";
-
-
-                const disciplina =
-                    evento.disciplina ||
-                    "Disciplina não identificada";
-
-
-                const url =
-                    evento.url ||
-                    "";
-
-
-                const textoPrazo =
-                    obterTextoPrazo(evento);
-
+            for (const evento of ordenarEventos(eventosDaData)) {
+                const estado = obterEstado(evento);
+                const timestamp = obterTimestamp(evento);
+                const dataHora = timestamp ? formatarDataHora(timestamp) : "Data não informada";
+                const nome = evento.nome || "Atividade sem nome";
+                const disciplina = evento.disciplina || "Disciplina não identificada";
+                const url = evento.url || "";
+                const textoPrazo = obterTextoPrazo(evento);
+                const busca = `${nome} ${disciplina}`.toLowerCase();
 
                 html += `
-                    <article
-                        class="event-card"
-                        data-search="
-                            ${escaparHTML(nome.toLowerCase())}
-                            ${escaparHTML(disciplina.toLowerCase())}
-                        "
-                    >
-
+                    <article class="event-card" data-search="${escaparAtributo(busca)}">
                         <div class="event-top">
-
                             <div class="event-info">
-
-                                <h2 class="event-name">
-                                    ${escaparHTML(nome)}
-                                </h2>
-
-                                <div class="event-course">
-                                    ${escaparHTML(disciplina)}
-                                </div>
-
-                                <div class="event-date">
-                                    <strong>Prazo:</strong>
-                                    ${escaparHTML(dataHora)}
-                                </div>
-
+                                <h2 class="event-name">${escaparHTML(nome)}</h2>
+                                <div class="event-course">${escaparHTML(disciplina)}</div>
+                                <div class="event-date"><strong>Prazo:</strong> ${escaparHTML(dataHora)}</div>
                             </div>
-
                             <div class="event-right">
-
-                                <span class="badge ${estado.classe}">
-                                    ${escaparHTML(textoPrazo)}
-                                </span>
-
-                                ${
-                                    url
-                                        ? `
-                                            <a
-                                                class="event-link"
-                                                href="${escaparAtributo(url)}"
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                            >
-                                                Abrir no Moodle
-                                            </a>
-                                        `
-                                        : ""
-                                }
-
+                                <span class="badge ${estado.classe}">${escaparHTML(textoPrazo)}</span>
+                                ${url ? `
+                                    <a class="event-link" href="${escaparAtributo(url)}" target="_blank" rel="noopener noreferrer">
+                                        Abrir no Moodle
+                                    </a>` : ""}
                             </div>
-
                         </div>
-
-                    </article>
-                `;
+                    </article>`;
             }
 
-
-            html += `
-                </section>
-            `;
+            html += `</section>`;
         }
 
-
-        lista.innerHTML =
-            html;
+        lista.innerHTML = html;
     }
 
-
     function escaparHTML(texto) {
-
         return String(texto)
             .replace(/&/g, "&amp;")
             .replace(/</g, "&lt;")
@@ -1554,9 +816,7 @@
             .replace(/'/g, "&#039;");
     }
 
-
     function escaparAtributo(texto) {
-
         return String(texto)
             .replace(/&/g, "&amp;")
             .replace(/"/g, "&quot;")
@@ -1564,216 +824,80 @@
             .replace(/>/g, "&gt;");
     }
 
-
     function aplicarPesquisa() {
+        const termo = document.getElementById("search").value.trim().toLowerCase();
 
-        const termo =
-            document.getElementById("search")
-                .value
-                .trim()
-                .toLowerCase();
-
-
-        const cards =
-            document.querySelectorAll(
-                ".event-card"
-            );
-
-
-        cards.forEach(card => {
-
-            const texto =
-                card
-                    .getAttribute("data-search")
-                    .toLowerCase();
-
-
-            if (
-                !termo ||
-                texto.includes(termo)
-            ) {
-
-                card.style.display = "";
-
-            } else {
-
-                card.style.display = "none";
-            }
-
+        document.querySelectorAll(".event-card").forEach(card => {
+            const texto = (card.getAttribute("data-search") || "").toLowerCase();
+            card.style.display = (!termo || texto.includes(termo)) ? "" : "none";
         });
 
-
-        document
-            .querySelectorAll(".date-group")
-            .forEach(grupo => {
-
-                const cardsVisiveis =
-                    Array.from(
-                        grupo.querySelectorAll(
-                            ".event-card"
-                        )
-                    )
-                    .some(
-                        card =>
-                            card.style.display !==
-                            "none"
-                    );
-
-
-                grupo.style.display =
-                    cardsVisiveis
-                        ? ""
-                        : "none";
-            });
+        document.querySelectorAll(".date-group").forEach(grupo => {
+            const algumVisivel = Array.from(grupo.querySelectorAll(".event-card"))
+                .some(card => card.style.display !== "none");
+            grupo.style.display = algumVisivel ? "" : "none";
+        });
     }
 
-
+    /* ==========================================================
+       CARREGAMENTO
+       ========================================================== */
     async function carregarEventos() {
-
-        const lista =
-            document.getElementById("lista");
-
+        const lista = document.getElementById("lista");
 
         try {
+            const resposta = await fetch("eventos.json?" + Date.now(), { cache: "no-store" });
 
-            const resposta =
-                await fetch(
-                    "eventos.json?" +
-                    Date.now(),
-                    {
-                        cache: "no-store"
-                    }
-                );
+            if (!resposta.ok) throw new Error(`HTTP ${resposta.status}`);
 
+            const dados = await resposta.json();
 
-            if (!resposta.ok) {
+            if (!Array.isArray(dados)) throw new Error("eventos.json não contém uma lista.");
 
-                throw new Error(
-                    `HTTP ${resposta.status}`
-                );
-            }
+            let eventos = normalizarAtividades(dados);
+            eventos = eventos.filter(evento => !foiEnviada(evento));
+            eventos = ordenarEventos(eventos);
 
+            todosEventos = eventos;
 
-            const dados =
-                await resposta.json();
+            atualizarAssistente(eventos);
+            atualizarResumo(eventos);
+            renderizar(eventos);
 
+            const n = eventos.length;
+            document.getElementById("statusText").textContent =
+                `${n} atividade${n === 1 ? "" : "s"} encontrada${n === 1 ? "" : "s"}`;
 
-            if (!Array.isArray(dados)) {
-
-                throw new Error(
-                    "eventos.json não contém uma lista."
-                );
-            }
-
-
-            let eventos =
-                normalizarAtividades(
-                    dados
-                );
-
-
-            eventos =
-                eventos.filter(
-                    evento =>
-                        !foiEnviada(evento)
-                );
-
-
-            eventos =
-                ordenarEventos(
-                    eventos
-                );
-
-
-            todosEventos =
-                eventos;
-
-
-            atualizarResumo(
-                eventos
-            );
-
-
-            renderizar(
-                eventos
-            );
-
-
-            document.getElementById(
-                "statusText"
-            ).textContent =
-                `${eventos.length} atividade${
-                    eventos.length === 1
-                        ? ""
-                        : "s"
-                } encontrada${
-                    eventos.length === 1
-                        ? ""
-                        : "s"
-                }`;
-
-
-            /*
-             * Caso exista pesquisa ativa,
-             * reaplica depois da atualização.
-             */
+            /* Reaplica a pesquisa ativa depois da atualização. */
             aplicarPesquisa();
 
-
         } catch (erro) {
-
-            console.error(
-                "Erro ao carregar eventos:",
-                erro
-            );
-
+            console.error("Erro ao carregar eventos:", erro);
 
             lista.innerHTML = `
                 <div class="error">
-
-                    Não foi possível carregar
-                    as atividades.
-
+                    Não foi possível carregar as atividades.
                     <br><br>
+                    Erro: ${escaparHTML(erro.message)}
+                </div>`;
 
-                    Erro:
-                    ${escaparHTML(erro.message)}
+            document.getElementById("statusText").textContent = "Erro ao atualizar atividades.";
 
-                </div>
-            `;
-
-
-            document.getElementById(
-                "statusText"
-            ).textContent =
-                "Erro ao atualizar atividades.";
+            if (primeiraMensagem) {
+                document.getElementById("mensagem").textContent =
+                    "Não consegui buscar suas atividades agora. Vou tentar novamente em instantes.";
+                document.getElementById("saudacao").textContent = escolher(SAUDACOES[obterPeriodo()]);
+            }
         }
     }
 
-
-    document
-        .getElementById("search")
-        .addEventListener(
-            "input",
-            aplicarPesquisa
-        );
-
+    document.getElementById("search").addEventListener("input", aplicarPesquisa);
+    document.getElementById("anoAtual").textContent = new Date().getFullYear();
 
     carregarEventos();
 
-
-    /*
-     * Atualiza automaticamente a cada minuto.
-     */
-    setInterval(
-        carregarEventos,
-        60 * 1000
-    );
-
-</script>
-
-<script>
-    document.getElementById("anoAtual").textContent = new Date().getFullYear();
+    /* Atualiza automaticamente a cada minuto. */
+    setInterval(carregarEventos, 60 * 1000);
 </script>
 
 </body>
