@@ -559,6 +559,8 @@ class MoodleClient:
         for obj in possible_objects:
 
             for key in (
+                "submissionstatus",
+                "submission_status",
                 "status",
                 "workflowstate",
                 "state",
