@@ -317,6 +317,35 @@ def main():
             eventos
         )
 
+        # Atividades já entregues não permanecem no eventos.json.
+        enviados = [
+            evento
+            for evento in eventos
+            if str(evento.get("tipo") or "").lower() == "due"
+            and evento.get("enviado") is True
+        ]
+
+        if enviados:
+            print()
+            print(
+                f"🗑️ Atividades já entregues que serão removidas "
+                f"do histórico: {len(enviados)}"
+            )
+
+            for evento in enviados:
+                print(
+                    f"   ✅ Removendo: {evento.get('nome')}"
+                )
+
+        eventos = [
+            evento
+            for evento in eventos
+            if not (
+                str(evento.get("tipo") or "").lower() == "due"
+                and evento.get("enviado") is True
+            )
+        ]
+
         historico = carregar_historico()
 
         print()
@@ -329,6 +358,25 @@ def main():
             criar_chave_evento(evento)
             for evento in historico
         }
+
+        # Remove do histórico qualquer atividade que acabou de
+        # ser confirmada como entregue.
+        chaves_enviados = {
+            criar_chave_evento(evento)
+            for evento in enviados
+        }
+
+        if chaves_enviados:
+            historico = [
+                evento
+                for evento in historico
+                if criar_chave_evento(evento) not in chaves_enviados
+            ]
+
+            chaves_historico = {
+                criar_chave_evento(evento)
+                for evento in historico
+            }
 
         novos_eventos = []
 
