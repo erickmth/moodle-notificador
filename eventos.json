@@ -9,5 +9,16 @@
     "tipo": "due",
     "url": "https://ava.fiep.digital/mod/assign/view.php?id=1305394",
     "enviado": false
+  },
+  {
+    "id": "1970405",
+    "nome": "Entrega Revisão (APS 3)",
+    "disciplina": "Química dos Materiais",
+    "curso_id": 40024,
+    "timestamp": 1791601140,
+    "timesort": 1791601140,
+    "tipo": "due",
+    "url": "https://ava.fiep.digital/mod/assign/view.php?id=1305554",
+    "enviado": false
   }
 ]
