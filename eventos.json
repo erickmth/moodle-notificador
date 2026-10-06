@@ -53,5 +53,27 @@
     "tipo": "due",
     "url": "https://ava.fiep.digital/mod/assign/view.php?id=1305629",
     "enviado": false
+  },
+  {
+    "id": "1999660",
+    "nome": "PB1 - artigo corrigido",
+    "disciplina": "Jornada de Aprendizagem - Tecnologia e Sistemas",
+    "curso_id": 40025,
+    "timestamp": 1792447200,
+    "timesort": 1792447200,
+    "tipo": "due",
+    "url": "https://ava.fiep.digital/mod/assign/view.php?id=1305767",
+    "enviado": false
+  },
+  {
+    "id": "1999662",
+    "nome": "PB1 - artigo corrigido",
+    "disciplina": "Jornada de Aprendizagem - Tecnologia e Sistemas",
+    "curso_id": 40025,
+    "timestamp": 1792447200,
+    "timesort": 1792447200,
+    "tipo": "expectcompletionon",
+    "url": "https://ava.fiep.digital/mod/assign/view.php?id=1305767",
+    "enviado": false
   }
 ]
