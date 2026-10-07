@@ -75,5 +75,16 @@
     "tipo": "expectcompletionon",
     "url": "https://ava.fiep.digital/mod/assign/view.php?id=1305767",
     "enviado": false
+  },
+  {
+    "id": "2000387",
+    "nome": "NOTA 2  Aula 12",
+    "disciplina": "Estatística Orientada a Ciência de Dados",
+    "curso_id": 40023,
+    "timestamp": 1792119540,
+    "timesort": 1792119540,
+    "tipo": "due",
+    "url": "https://ava.fiep.digital/mod/assign/view.php?id=1306294",
+    "enviado": false
   }
 ]
