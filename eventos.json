@@ -86,5 +86,16 @@
     "tipo": "due",
     "url": "https://ava.fiep.digital/mod/assign/view.php?id=1306294",
     "enviado": false
+  },
+  {
+    "id": "2037374",
+    "nome": "NOTA 2 - Aula 13",
+    "disciplina": "Estatística Orientada a Ciência de Dados",
+    "curso_id": 40023,
+    "timestamp": 1792724340,
+    "timesort": 1792724340,
+    "tipo": "due",
+    "url": "https://ava.fiep.digital/mod/assign/view.php?id=1309557",
+    "enviado": false
   }
 ]
