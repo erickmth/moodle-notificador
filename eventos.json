@@ -23,7 +23,7 @@
   },
   {
     "id": "1970459",
-    "nome": "PROCAD",
+    "nome": "PROCAD - Sem atividades, apenas para eu lançar notas",
     "disciplina": "Estatística Orientada a Ciência de Dados",
     "curso_id": 40023,
     "timestamp": 1791687600,
@@ -96,6 +96,17 @@
     "timesort": 1792724340,
     "tipo": "due",
     "url": "https://ava.fiep.digital/mod/assign/view.php?id=1309557",
+    "enviado": false
+  },
+  {
+    "id": "2038058",
+    "nome": "NOTA 2 - Aula 14",
+    "disciplina": "Estatística Orientada a Ciência de Dados",
+    "curso_id": 40023,
+    "timestamp": 1792717200,
+    "timesort": 1792717200,
+    "tipo": "due",
+    "url": "https://ava.fiep.digital/mod/assign/view.php?id=1310484",
     "enviado": false
   }
 ]
