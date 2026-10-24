@@ -108,5 +108,16 @@
     "tipo": "due",
     "url": "https://ava.fiep.digital/mod/assign/view.php?id=1310484",
     "enviado": false
+  },
+  {
+    "id": "2040962",
+    "nome": "APS 1",
+    "disciplina": "Química dos Materiais",
+    "curso_id": 40024,
+    "timestamp": 1793397600,
+    "timesort": 1793397600,
+    "tipo": "due",
+    "url": "https://ava.fiep.digital/mod/assign/view.php?id=1311958",
+    "enviado": false
   }
 ]
