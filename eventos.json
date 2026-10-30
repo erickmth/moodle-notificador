@@ -119,5 +119,16 @@
     "tipo": "due",
     "url": "https://ava.fiep.digital/mod/assign/view.php?id=1311958",
     "enviado": false
+  },
+  {
+    "id": "2088225",
+    "nome": "Nota 2 - Aula 15",
+    "disciplina": "Estatística Orientada a Ciência de Dados",
+    "curso_id": 40023,
+    "timestamp": 1793933940,
+    "timesort": 1793933940,
+    "tipo": "due",
+    "url": "https://ava.fiep.digital/mod/assign/view.php?id=1315763",
+    "enviado": false
   }
 ]
