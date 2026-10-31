@@ -100,6 +100,16 @@ def salvar_historico(eventos):
         raise
 
 
+def prazo_vencido(evento, agora=None):
+    """True se o prazo da atividade já passou."""
+    agora = agora or int(time.time())
+    try:
+        timestamp = int(evento.get("timestamp") or 0)
+    except (TypeError, ValueError):
+        return False
+    return bool(timestamp) and timestamp <= agora
+
+
 def criar_chave_evento(evento):
 
     if evento.get("id"):
@@ -307,6 +317,18 @@ def main():
 
         eventos = client.get_normalized_events()
 
+        # Descarta atividades cujo prazo já venceu.
+        agora = int(time.time())
+        total_antes = len(eventos)
+        eventos = [
+            evento for evento in eventos
+            if not prazo_vencido(evento, agora)
+        ]
+        print(
+            f"⌛ Prazos vencidos ignorados: "
+            f"{total_antes - len(eventos)}"
+        )
+
         print(
             f"📅 Eventos encontrados: "
             f"{len(eventos)}"
@@ -347,6 +369,17 @@ def main():
         ]
 
         historico = carregar_historico()
+
+        # Remove do histórico o que já venceu.
+        total_hist = len(historico)
+        historico = [
+            evento for evento in historico
+            if not prazo_vencido(evento, agora)
+        ]
+        print(
+            f"🧹 Vencidos removidos do histórico: "
+            f"{total_hist - len(historico)}"
+        )
 
         print()
         print(
