@@ -541,6 +541,11 @@
         return resultado;
     }
 
+    function prazoVencido(evento) {
+        const ts = obterTimestamp(evento);
+        return ts > 0 && ts * 1000 <= Date.now();
+    }
+
     function foiEnviada(evento) {
         if (!evento) return false;
         if (evento.enviado === true || evento.notificacao_enviada === true) return true;
@@ -858,7 +863,7 @@
             if (!Array.isArray(dados)) throw new Error("eventos.json não contém uma lista.");
 
             let eventos = normalizarAtividades(dados);
-            eventos = eventos.filter(evento => !foiEnviada(evento));
+            eventos = eventos.filter(evento => !foiEnviada(evento) && !prazoVencido(evento));
             eventos = ordenarEventos(eventos);
 
             todosEventos = eventos;
