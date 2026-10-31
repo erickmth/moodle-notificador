@@ -1,38 +1,5 @@
 [
   {
-    "id": "1966774",
-    "nome": "NOTA 2 - AULA 11",
-    "disciplina": "Estatística Orientada a Ciência de Dados",
-    "curso_id": 40023,
-    "timestamp": 1791514740,
-    "timesort": 1791514740,
-    "tipo": "due",
-    "url": "https://ava.fiep.digital/mod/assign/view.php?id=1305394",
-    "enviado": false
-  },
-  {
-    "id": "1970405",
-    "nome": "Entrega Revisão (APS 3)",
-    "disciplina": "Química dos Materiais",
-    "curso_id": 40024,
-    "timestamp": 1791601140,
-    "timesort": 1791601140,
-    "tipo": "due",
-    "url": "https://ava.fiep.digital/mod/assign/view.php?id=1305554",
-    "enviado": false
-  },
-  {
-    "id": "1970459",
-    "nome": "PROCAD - Sem atividades, apenas para eu lançar notas",
-    "disciplina": "Estatística Orientada a Ciência de Dados",
-    "curso_id": 40023,
-    "timestamp": 1791687600,
-    "timesort": 1791687600,
-    "tipo": "due",
-    "url": "https://ava.fiep.digital/mod/assign/view.php?id=1305630",
-    "enviado": false
-  },
-  {
     "id": "1970455",
     "nome": "APS 2 - ENTREGA INDIVIDUAL: 12/11/26",
     "disciplina": "Estatística Orientada a Ciência de Dados",
@@ -52,72 +19,6 @@
     "timesort": 1795143540,
     "tipo": "due",
     "url": "https://ava.fiep.digital/mod/assign/view.php?id=1305629",
-    "enviado": false
-  },
-  {
-    "id": "1999660",
-    "nome": "PB1 - artigo corrigido",
-    "disciplina": "Jornada de Aprendizagem - Tecnologia e Sistemas",
-    "curso_id": 40025,
-    "timestamp": 1792447200,
-    "timesort": 1792447200,
-    "tipo": "due",
-    "url": "https://ava.fiep.digital/mod/assign/view.php?id=1305767",
-    "enviado": false
-  },
-  {
-    "id": "1999662",
-    "nome": "PB1 - artigo corrigido",
-    "disciplina": "Jornada de Aprendizagem - Tecnologia e Sistemas",
-    "curso_id": 40025,
-    "timestamp": 1792447200,
-    "timesort": 1792447200,
-    "tipo": "expectcompletionon",
-    "url": "https://ava.fiep.digital/mod/assign/view.php?id=1305767",
-    "enviado": false
-  },
-  {
-    "id": "2000387",
-    "nome": "NOTA 2  Aula 12",
-    "disciplina": "Estatística Orientada a Ciência de Dados",
-    "curso_id": 40023,
-    "timestamp": 1792119540,
-    "timesort": 1792119540,
-    "tipo": "due",
-    "url": "https://ava.fiep.digital/mod/assign/view.php?id=1306294",
-    "enviado": false
-  },
-  {
-    "id": "2037374",
-    "nome": "NOTA 2 - Aula 13",
-    "disciplina": "Estatística Orientada a Ciência de Dados",
-    "curso_id": 40023,
-    "timestamp": 1792724340,
-    "timesort": 1792724340,
-    "tipo": "due",
-    "url": "https://ava.fiep.digital/mod/assign/view.php?id=1309557",
-    "enviado": false
-  },
-  {
-    "id": "2038058",
-    "nome": "NOTA 2 - Aula 14",
-    "disciplina": "Estatística Orientada a Ciência de Dados",
-    "curso_id": 40023,
-    "timestamp": 1792717200,
-    "timesort": 1792717200,
-    "tipo": "due",
-    "url": "https://ava.fiep.digital/mod/assign/view.php?id=1310484",
-    "enviado": false
-  },
-  {
-    "id": "2040962",
-    "nome": "APS 1",
-    "disciplina": "Química dos Materiais",
-    "curso_id": 40024,
-    "timestamp": 1793397600,
-    "timesort": 1793397600,
-    "tipo": "due",
-    "url": "https://ava.fiep.digital/mod/assign/view.php?id=1311958",
     "enviado": false
   },
   {
