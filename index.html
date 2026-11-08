@@ -262,6 +262,56 @@
             text-align: left; font-size: 15px;
         }
 
+
+        /* 7b. FALTAS */
+        .faltas { margin-top: var(--space-5); scroll-margin-top: 96px; }
+        .faltas-head {
+            display: flex; align-items: flex-end; justify-content: space-between;
+            gap: var(--space-2); flex-wrap: wrap;
+            padding-bottom: var(--space-2); margin-bottom: var(--space-3);
+            border-bottom: 1px solid var(--border);
+        }
+        .faltas-title {
+            display: flex; align-items: center; gap: 12px; margin: 0;
+            color: var(--blue-900); font-size: 1.5rem; font-weight: 800;
+        }
+        .faltas-title::before { content: ""; width: 4px; height: 24px; background: var(--red); }
+        .faltas-sub { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
+        .periodo-wrap { display: flex; flex-direction: column; gap: 4px; }
+        .periodo-wrap label { font-size: 13px; font-weight: 600; color: var(--muted); }
+        .periodo-select {
+            height: 44px; min-width: 140px; padding: 0 12px;
+            border: 1px solid #b7c0cc; border-bottom: 2px solid var(--blue-900);
+            border-radius: var(--radius); background: #fff; color: var(--text);
+            font: inherit; font-size: 15px; font-weight: 600;
+        }
+        .periodo-select:focus { outline: none; border-color: var(--blue-700); box-shadow: 0 0 0 3px rgba(0, 80, 158, .25); }
+
+        .faltas-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+        .falta-card {
+            background: var(--card); border: 1px solid var(--border);
+            border-left: 4px solid var(--success); border-radius: var(--radius);
+            padding: 18px 20px; display: flex; flex-direction: column; gap: 12px;
+        }
+        .falta-card.atencao { border-left-color: #d97706; }
+        .falta-card.critico { border-left-color: var(--danger); }
+        .falta-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+        .falta-nome { margin: 0; font-size: 1rem; font-weight: 700; line-height: 1.4; color: var(--blue-950); overflow-wrap: anywhere; }
+        .falta-total { text-align: right; flex-shrink: 0; }
+        .falta-num { font-size: 1.75rem; font-weight: 800; line-height: 1; color: var(--blue-900); }
+        .falta-num-label { font-size: 12px; color: var(--muted); }
+        .falta-barra { height: 8px; background: var(--blue-100); border-radius: 999px; overflow: hidden; }
+        .falta-barra span { display: block; height: 100%; background: var(--success); border-radius: 999px; }
+        .falta-card.atencao .falta-barra span { background: #d97706; }
+        .falta-card.critico .falta-barra span { background: var(--danger); }
+        .falta-info { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+        .falta-etapas { display: flex; flex-wrap: wrap; gap: 6px; }
+        .falta-etapa {
+            font-size: 12px; padding: 3px 8px; border-radius: var(--radius);
+            background: var(--bg); color: var(--muted); border: 1px solid var(--border);
+        }
+        .falta-etapa strong { color: var(--text); }
+
         /* 7. FOOTER */
         .site-footer { background: var(--blue-950); color: #cfd9e6; font-size: 14px; }
         .footer-main {
@@ -315,6 +365,7 @@
         </div>
         <nav class="nav" id="mainNav" aria-label="Navegação principal">
             <a href="#lista" aria-current="page">Prazos</a>
+            <a href="#faltas">Faltas</a>
         </nav>
     </div>
 </header>
@@ -380,6 +431,24 @@
     <main id="lista">
         <div class="loading">Carregando atividades...</div>
     </main>
+
+    <section class="faltas" id="faltas" aria-labelledby="faltasTitulo">
+        <div class="faltas-head">
+            <div>
+                <h2 class="faltas-title" id="faltasTitulo">Faltas</h2>
+                <p class="faltas-sub" id="faltasSub">Portal Educacional, atualizado automaticamente</p>
+            </div>
+            <div class="periodo-wrap">
+                <label for="periodo">Período</label>
+                <select id="periodo" class="periodo-select" disabled>
+                    <option>—</option>
+                </select>
+            </div>
+        </div>
+        <div id="faltasLista">
+            <div class="loading">Carregando faltas...</div>
+        </div>
+    </section>
 
 </div>
 
@@ -899,13 +968,147 @@
         }
     }
 
+
+    /* ==========================================================
+       FALTAS
+       ========================================================== */
+    /* Percentual máximo de faltas permitido (75% de frequência). */
+    const LIMITE_FALTAS = 25;
+
+    let dadosFaltas = null;
+    let periodoEscolhido = null;
+
+    function classeFalta(pct) {
+        if (pct === null || pct === undefined) return "";
+        if (pct >= LIMITE_FALTAS) return "critico";
+        if (pct >= LIMITE_FALTAS * 0.6) return "atencao";
+        return "";
+    }
+
+    function textoFalta(pct) {
+        if (pct === null || pct === undefined) return "Percentual não informado";
+        if (pct >= LIMITE_FALTAS) return "Acima do limite de faltas";
+        if (pct >= LIMITE_FALTAS * 0.6) return "Atenção: perto do limite";
+        return "Dentro do limite";
+    }
+
+    function formatarNumero(n) {
+        return Number(n).toLocaleString("pt-BR", { maximumFractionDigits: 1 });
+    }
+
+    function renderizarFaltas() {
+        const alvo = document.getElementById("faltasLista");
+        const info = dadosFaltas?.periodos?.[periodoEscolhido];
+        const disciplinas = info?.disciplinas || [];
+
+        if (!disciplinas.length) {
+            alvo.innerHTML = `
+                <div class="empty">
+                    <div class="empty-title">Nenhuma falta registrada</div>
+                    <div class="empty-text">Não há disciplinas com faltas para este período.</div>
+                </div>`;
+            return;
+        }
+
+        alvo.innerHTML = `<div class="faltas-grid">${disciplinas.map(d => {
+            const pct = d.percentual;
+            const largura = pct === null || pct === undefined
+                ? 0 : Math.min(100, (pct / LIMITE_FALTAS) * 100);
+            const etapas = (d.etapas || [])
+                .filter(e => e.faltas !== null && e.faltas !== undefined)
+                .map(e => `<span class="falta-etapa">${escaparHTML(e.etapa)}: <strong>${formatarNumero(e.faltas)}</strong></span>`)
+                .join("");
+
+            return `
+                <article class="falta-card ${classeFalta(pct)}">
+                    <div class="falta-top">
+                        <h3 class="falta-nome">${escaparHTML(d.disciplina)}</h3>
+                        <div class="falta-total">
+                            <div class="falta-num">${formatarNumero(d.total)}</div>
+                            <div class="falta-num-label">falta${d.total === 1 ? "" : "s"}</div>
+                        </div>
+                    </div>
+                    <div class="falta-barra" role="img" aria-label="${escaparAtributo(pct === null || pct === undefined ? "Percentual não informado" : formatarNumero(pct) + "% de faltas, limite de " + LIMITE_FALTAS + "%")}">
+                        <span style="width:${largura}%"></span>
+                    </div>
+                    <div class="falta-info">
+                        <span>${escaparHTML(textoFalta(pct))}</span>
+                        <span><strong>${pct === null || pct === undefined ? "—" : formatarNumero(pct) + "%"}</strong> de ${LIMITE_FALTAS}%</span>
+                    </div>
+                    ${etapas ? `<div class="falta-etapas">${etapas}</div>` : ""}
+                </article>`;
+        }).join("")}</div>`;
+    }
+
+    function montarSeletorPeriodo() {
+        const select = document.getElementById("periodo");
+        const periodos = Object.keys(dadosFaltas?.periodos || {}).sort().reverse();
+
+        if (!periodoEscolhido || !periodos.includes(periodoEscolhido)) {
+            periodoEscolhido = periodos.includes(dadosFaltas.periodo_atual)
+                ? dadosFaltas.periodo_atual
+                : periodos[0];
+        }
+
+        select.innerHTML = periodos
+            .map(p => `<option value="${escaparAtributo(p)}"${p === periodoEscolhido ? " selected" : ""}>${escaparHTML(p)}${p === dadosFaltas.periodo_atual ? " (atual)" : ""}</option>`)
+            .join("");
+        select.disabled = periodos.length === 0;
+    }
+
+    async function carregarFaltas() {
+        const alvo = document.getElementById("faltasLista");
+
+        try {
+            const resposta = await fetch("faltas.json?" + Date.now(), { cache: "no-store" });
+
+            if (resposta.status === 404) {
+                alvo.innerHTML = `
+                    <div class="empty">
+                        <div class="empty-title">Faltas ainda não disponíveis</div>
+                        <div class="empty-text">Elas aparecem aqui depois da próxima verificação automática.</div>
+                    </div>`;
+                return;
+            }
+            if (!resposta.ok) throw new Error(`HTTP ${resposta.status}`);
+
+            dadosFaltas = await resposta.json();
+            montarSeletorPeriodo();
+            renderizarFaltas();
+
+            if (dadosFaltas.atualizado_em) {
+                const quando = new Intl.DateTimeFormat("pt-BR", {
+                    timeZone: FUSO, day: "2-digit", month: "2-digit",
+                    hour: "2-digit", minute: "2-digit"
+                }).format(new Date(dadosFaltas.atualizado_em));
+                document.getElementById("faltasSub").textContent =
+                    `Portal Educacional, atualizado em ${quando}`;
+            }
+        } catch (erro) {
+            console.error("Erro ao carregar faltas:", erro);
+            alvo.innerHTML = `
+                <div class="error">
+                    Não foi possível carregar as faltas.
+                    <br><br>
+                    Erro: ${escaparHTML(erro.message)}
+                </div>`;
+        }
+    }
+
+    document.getElementById("periodo").addEventListener("change", evento => {
+        periodoEscolhido = evento.target.value;
+        renderizarFaltas();
+    });
+
     document.getElementById("search").addEventListener("input", aplicarPesquisa);
     document.getElementById("anoAtual").textContent = new Date().getFullYear();
 
     carregarEventos();
+    carregarFaltas();
 
     /* Atualiza automaticamente a cada minuto. */
     setInterval(carregarEventos, 60 * 1000);
+    setInterval(carregarFaltas, 5 * 60 * 1000);
 </script>
 
 </body>

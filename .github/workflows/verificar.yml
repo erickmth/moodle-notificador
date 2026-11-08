@@ -31,16 +31,27 @@ jobs:
           MOODLE_PASSWORD: ${{ secrets.MOODLE_PASSWORD }}
         run: python main.py
 
+      - name: Buscar faltas no portal
+        if: ${{ !cancelled() }}
+        env:
+          PORTAL_USER: ${{ secrets.PORTAL_USER }}
+          PORTAL_PASSWORD: ${{ secrets.PORTAL_PASSWORD }}
+          MOODLE_USER: ${{ secrets.MOODLE_USER }}
+          MOODLE_PASSWORD: ${{ secrets.MOODLE_PASSWORD }}
+        run: python faltas.py
+
       - name: Salvar histórico
+        if: ${{ !cancelled() }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
           git add eventos.json
+          [ -f faltas.json ] && git add faltas.json
 
           if git diff --cached --quiet; then
             echo "Nenhuma alteração no histórico."
           else
-            git commit -m "Atualizar histórico do Moodle"
+            git commit -m "Atualizar histórico do Moodle e faltas"
             git push
           fi
