@@ -130,16 +130,6 @@ class PortalClient:
 
         chave = self._encontrar_chave(dados)
 
-        # Diagnóstico sem expor valores: só nomes de campos, tipos e cookies.
-        if isinstance(dados, dict):
-            estrutura = {k: type(v).__name__ for k, v in dados.items()}
-            if isinstance(dados.get("data"), dict):
-                estrutura["data.*"] = list(dados["data"].keys())[:10]
-        else:
-            estrutura = type(dados).__name__
-        print(f"Estrutura da resposta do login: {estrutura}")
-        print(f"Cookies recebidos: {sorted(self.session.cookies.keys())}")
-
         if not chave:
             print("⚠️ Login sem chave; tentando seguir só com os cookies.")
             print("Portal autenticado (sem AutoLoginPortal).")
@@ -156,12 +146,6 @@ class PortalClient:
         dados = self._json(r, "AutoLoginPortal")
         if isinstance(dados, dict) and dados.get("Excessao"):
             raise PortalError(f"AutoLoginPortal recusado: {dados.get('Excessao')}")
-
-        try:
-            logado = self._get("UsuarioLogado")
-            print(f"Usuário logado: {bool(isinstance(logado, dict) and logado.get('value'))}")
-        except Exception as erro:
-            print(f"(não foi possível confirmar UsuarioLogado: {erro})")
 
         print("Portal autenticado.")
 
