@@ -972,24 +972,32 @@
     /* ==========================================================
        FALTAS
        ========================================================== */
-    /* Percentual máximo de faltas permitido (75% de frequência). */
-    const LIMITE_FALTAS = 25;
+    /* Limite de faltas por disciplina. Cada falta = 1 hora de aula; 4 horas por dia. */
+    const LIMITE_FALTAS = 20;
+    const FALTAS_POR_DIA = 4;
 
     let dadosFaltas = null;
     let periodoEscolhido = null;
 
-    function classeFalta(pct) {
-        if (pct === null || pct === undefined) return "";
-        if (pct >= LIMITE_FALTAS) return "critico";
-        if (pct >= LIMITE_FALTAS * 0.6) return "atencao";
+    function restantes(total) {
+        return Math.max(0, LIMITE_FALTAS - (Number(total) || 0));
+    }
+
+    function classeFalta(total) {
+        const r = restantes(total);
+        if (r === 0) return "critico";
+        if (r <= FALTAS_POR_DIA * 2) return "atencao";
         return "";
     }
 
-    function textoFalta(pct) {
-        if (pct === null || pct === undefined) return "Percentual não informado";
-        if (pct >= LIMITE_FALTAS) return "Acima do limite de faltas";
-        if (pct >= LIMITE_FALTAS * 0.6) return "Atenção: perto do limite";
-        return "Dentro do limite";
+    function textoFalta(total) {
+        const r = restantes(total);
+        if (r === 0) return "Limite de faltas atingido";
+        const dias = Math.floor(r / FALTAS_POR_DIA);
+        const diasTxt = dias === 0
+            ? "menos de 1 dia de aula"
+            : `${dias} dia${dias === 1 ? "" : "s"} de aula`;
+        return `Pode faltar mais ${r} hora${r === 1 ? "" : "s"} (${diasTxt})`;
     }
 
     function formatarNumero(n) {
@@ -1011,29 +1019,27 @@
         }
 
         alvo.innerHTML = `<div class="faltas-grid">${disciplinas.map(d => {
-            const pct = d.percentual;
-            const largura = pct === null || pct === undefined
-                ? 0 : Math.min(100, (pct / LIMITE_FALTAS) * 100);
+            const total = Number(d.total) || 0;
+            const largura = Math.min(100, (total / LIMITE_FALTAS) * 100);
             const etapas = (d.etapas || [])
                 .filter(e => e.faltas !== null && e.faltas !== undefined)
                 .map(e => `<span class="falta-etapa">${escaparHTML(e.etapa)}: <strong>${formatarNumero(e.faltas)}</strong></span>`)
                 .join("");
 
             return `
-                <article class="falta-card ${classeFalta(pct)}">
+                <article class="falta-card ${classeFalta(total)}">
                     <div class="falta-top">
                         <h3 class="falta-nome">${escaparHTML(d.disciplina)}</h3>
                         <div class="falta-total">
-                            <div class="falta-num">${formatarNumero(d.total)}</div>
-                            <div class="falta-num-label">falta${d.total === 1 ? "" : "s"}</div>
+                            <div class="falta-num">${formatarNumero(total)}</div>
+                            <div class="falta-num-label">de ${LIMITE_FALTAS} faltas</div>
                         </div>
                     </div>
-                    <div class="falta-barra" role="img" aria-label="${escaparAtributo(pct === null || pct === undefined ? "Percentual não informado" : formatarNumero(pct) + "% de faltas, limite de " + LIMITE_FALTAS + "%")}">
+                    <div class="falta-barra" role="img" aria-label="${escaparAtributo(formatarNumero(total) + " de " + LIMITE_FALTAS + " faltas")}">
                         <span style="width:${largura}%"></span>
                     </div>
                     <div class="falta-info">
-                        <span>${escaparHTML(textoFalta(pct))}</span>
-                        <span><strong>${pct === null || pct === undefined ? "—" : formatarNumero(pct) + "%"}</strong> de ${LIMITE_FALTAS}%</span>
+                        <span>${escaparHTML(textoFalta(total))}</span>
                     </div>
                     ${etapas ? `<div class="falta-etapas">${etapas}</div>` : ""}
                 </article>`;
