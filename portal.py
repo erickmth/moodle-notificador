@@ -85,6 +85,23 @@ class PortalClient:
             return dados["data"]
         return dados
 
+    @staticmethod
+    def _encontrar_chave(dados):
+        """A chave do login pode vir em 'value', 'data' ou 'data.value'."""
+        if isinstance(dados, str):
+            return dados or None
+        if not isinstance(dados, dict):
+            return None
+        for campo in ("value", "Value", "key", "Key", "data", "Data"):
+            valor = dados.get(campo)
+            if isinstance(valor, str) and valor:
+                return valor
+            if isinstance(valor, dict):
+                interna = PortalClient._encontrar_chave(valor)
+                if interna:
+                    return interna
+        return None
+
     # ------------------------------------------------------------------
     # Login
     # ------------------------------------------------------------------
@@ -111,12 +128,22 @@ class PortalClient:
         if erros:
             raise PortalError("Login recusado: " + " | ".join(erros))
 
-        chave = None
-        if isinstance(dados, dict):
-            chave = dados.get("value") or self._data(dados)
+        chave = self._encontrar_chave(dados)
 
-        if not isinstance(chave, str) or not chave:
-            raise PortalError("Login não retornou a chave de acesso.")
+        # Diagnóstico sem expor valores: só nomes de campos, tipos e cookies.
+        if isinstance(dados, dict):
+            estrutura = {k: type(v).__name__ for k, v in dados.items()}
+            if isinstance(dados.get("data"), dict):
+                estrutura["data.*"] = list(dados["data"].keys())[:10]
+        else:
+            estrutura = type(dados).__name__
+        print(f"Estrutura da resposta do login: {estrutura}")
+        print(f"Cookies recebidos: {sorted(self.session.cookies.keys())}")
+
+        if not chave:
+            print("⚠️ Login sem chave; tentando seguir só com os cookies.")
+            print("Portal autenticado (sem AutoLoginPortal).")
+            return
 
         # O portal abre "#/main?key=<chave>" e troca essa chave pela
         # sessão chamando user/AutoLoginPortal.
