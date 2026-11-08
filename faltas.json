@@ -1,0 +1,198 @@
+{
+  "atualizado_em": "2026-11-08T15:24:39-03:00",
+  "periodo_atual": "2026/2",
+  "periodos": {
+    "2027/1": {
+      "curso": "Engenharia Mecatrônica",
+      "inicio": "2027-01-01",
+      "disciplinas": [
+        {
+          "codigo": "GRB.080.06215",
+          "disciplina": "Análise de Circuitos Elétricos Teórica e Experimental",
+          "situacao": "Pré-Matricula",
+          "total": 0,
+          "percentual": 0.0,
+          "situacao_faltas": 4,
+          "etapas": [],
+          "curso": "Engenharia Mecatrônica"
+        },
+        {
+          "codigo": "GRB.080.06216",
+          "disciplina": "Cálculo Integral e Diferencial",
+          "situacao": "Pré-Matricula",
+          "total": 0,
+          "percentual": 0.0,
+          "situacao_faltas": 4,
+          "etapas": [],
+          "curso": "Engenharia Mecatrônica"
+        },
+        {
+          "codigo": "GRB.080.06217",
+          "disciplina": "Física Geral e Experimental",
+          "situacao": "Pré-Matricula",
+          "total": 0,
+          "percentual": 0.0,
+          "situacao_faltas": 4,
+          "etapas": [],
+          "curso": "Engenharia Mecatrônica"
+        },
+        {
+          "codigo": "GRB.080.06218",
+          "disciplina": "Jornada de Aprendizagem – Gestão e Viabilidade de Projetos",
+          "situacao": "Pré-Matricula",
+          "total": 0,
+          "percentual": 0.0,
+          "situacao_faltas": 4,
+          "etapas": [],
+          "curso": "Engenharia Mecatrônica"
+        }
+      ]
+    },
+    "2026/2": {
+      "curso": "Engenharia Mecatrônica",
+      "inicio": "2026-01-01",
+      "disciplinas": [
+        {
+          "codigo": "GRB.080.06211",
+          "disciplina": "Cálculo Aplicado, Geometria Analítica e Álgebra Linear",
+          "situacao": "Matriculado",
+          "total": 12,
+          "percentual": 15.0,
+          "situacao_faltas": 4,
+          "etapas": [
+            {
+              "etapa": "Mês 1",
+              "faltas": 0.0
+            },
+            {
+              "etapa": "Mês 2",
+              "faltas": 0.0
+            },
+            {
+              "etapa": "Mês 3",
+              "faltas": 0.0
+            },
+            {
+              "etapa": "Mês 4",
+              "faltas": 8.0
+            },
+            {
+              "etapa": "Mês 5",
+              "faltas": 4.0
+            },
+            {
+              "etapa": "Mês 6",
+              "faltas": null
+            }
+          ],
+          "curso": "Engenharia Mecatrônica"
+        },
+        {
+          "codigo": "GRB.080.06212",
+          "disciplina": "Estatística Orientada a Ciência de Dados",
+          "situacao": "Matriculado",
+          "total": 14,
+          "percentual": 17.5,
+          "situacao_faltas": 4,
+          "etapas": [
+            {
+              "etapa": "Mês 1",
+              "faltas": 0.0
+            },
+            {
+              "etapa": "Mês 2",
+              "faltas": 0.0
+            },
+            {
+              "etapa": "Mês 3",
+              "faltas": 1.0
+            },
+            {
+              "etapa": "Mês 4",
+              "faltas": 12.0
+            },
+            {
+              "etapa": "Mês 5",
+              "faltas": 1.0
+            },
+            {
+              "etapa": "Mês 6",
+              "faltas": null
+            }
+          ],
+          "curso": "Engenharia Mecatrônica"
+        },
+        {
+          "codigo": "GRB.080.06213",
+          "disciplina": "Jornada de Aprendizagem - Tecnologia e Sistemas",
+          "situacao": "Matriculado",
+          "total": 12,
+          "percentual": 15.0,
+          "situacao_faltas": 4,
+          "etapas": [
+            {
+              "etapa": "Mês 1",
+              "faltas": 0.0
+            },
+            {
+              "etapa": "Mês 2",
+              "faltas": 4.0
+            },
+            {
+              "etapa": "Mês 3",
+              "faltas": 8.0
+            },
+            {
+              "etapa": "Mês 4",
+              "faltas": 0.0
+            },
+            {
+              "etapa": "Mês 5",
+              "faltas": null
+            },
+            {
+              "etapa": "Mês 6",
+              "faltas": null
+            }
+          ],
+          "curso": "Engenharia Mecatrônica"
+        },
+        {
+          "codigo": "GRB.080.06214",
+          "disciplina": "Química dos Materiais",
+          "situacao": "Matriculado",
+          "total": 4,
+          "percentual": 5.0,
+          "situacao_faltas": 4,
+          "etapas": [
+            {
+              "etapa": "Mês 1",
+              "faltas": 0.0
+            },
+            {
+              "etapa": "Mês 2",
+              "faltas": 0.0
+            },
+            {
+              "etapa": "Mês 3",
+              "faltas": 0.0
+            },
+            {
+              "etapa": "Mês 4",
+              "faltas": 0.0
+            },
+            {
+              "etapa": "Mês 5",
+              "faltas": 4.0
+            },
+            {
+              "etapa": "Mês 6",
+              "faltas": null
+            }
+          ],
+          "curso": "Engenharia Mecatrônica"
+        }
+      ]
+    }
+  }
+}
