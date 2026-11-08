@@ -5,6 +5,7 @@ import time
 from pathlib import Path
 
 from moodle import MoodleClient
+import novidades
 
 
 # Garante que o arquivo fique na raiz do repositório,
@@ -510,6 +511,18 @@ def main():
         salvar_historico(
             novo_historico
         )
+
+        # Lista as atividades novas para o aviso no WhatsApp.
+        if novos_eventos:
+            novidades.adicionar("atividades", [
+                {
+                    "nome": evento.get("nome"),
+                    "disciplina": evento.get("disciplina"),
+                    "timestamp": evento.get("timestamp"),
+                    "url": evento.get("url"),
+                }
+                for evento in novos_eventos
+            ])
 
         # Confirma que o arquivo realmente existe
         # depois da gravação.

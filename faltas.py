@@ -3,6 +3,7 @@ import os
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+import novidades
 from portal import PortalClient
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -22,6 +23,43 @@ def escolher_periodo_atual(periodos):
     if iniciados:
         return max(iniciados, key=lambda p: periodos[p]["inicio"])
     return nomes[-1] if nomes else None
+
+
+def registrar_faltas_novas(dados):
+    """Compara com o faltas.json anterior e lista as faltas que aumentaram."""
+    if not FALTAS_FILE.exists():
+        return  # Primeira execução: nada para comparar.
+
+    try:
+        anterior = json.loads(FALTAS_FILE.read_text(encoding="utf-8"))
+    except ValueError:
+        return
+
+    def por_disciplina(info):
+        return {
+            (d.get("codigo") or d.get("disciplina")): d
+            for d in (info or {}).get("disciplinas", [])
+        }
+
+    novas = []
+    for periodo, info in dados["periodos"].items():
+        antes = por_disciplina(anterior.get("periodos", {}).get(periodo))
+        if not antes:
+            continue  # Período novo: não avisa tudo de uma vez.
+        for chave, d in por_disciplina(info).items():
+            total_antes = (antes.get(chave) or {}).get("total") or 0
+            total = d.get("total") or 0
+            if total > total_antes:
+                novas.append({
+                    "periodo": periodo,
+                    "disciplina": d.get("disciplina"),
+                    "novas": total - total_antes,
+                    "total": total,
+                })
+
+    if novas:
+        print(f"🆕 Disciplinas com falta nova: {len(novas)}")
+        novidades.adicionar("faltas", novas)
 
 
 def main():
@@ -55,6 +93,8 @@ def main():
         "periodo_atual": atual,
         "periodos": periodos,
     }
+
+    registrar_faltas_novas(dados)
 
     with open(FALTAS_FILE, "w", encoding="utf-8") as arquivo:
         json.dump(dados, arquivo, ensure_ascii=False, indent=2)

@@ -1,0 +1,61 @@
+name: Parear WhatsApp
+
+on:
+  workflow_dispatch:
+    inputs:
+      numero:
+        description: "Número do WhatsApp do BOT (secundário), com DDI e DDD. Ex.: 5541999998888"
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: whatsapp-sessao
+  cancel-in-progress: false
+
+jobs:
+  parear:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+
+      - name: Esconder o número nos logs
+        env:
+          NUMERO: ${{ inputs.numero }}
+        run: echo "::add-mask::$(echo "$NUMERO" | tr -cd '0-9')"
+
+      - name: Baixar código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: whatsapp/package-lock.json
+
+      - name: Instalar bot do WhatsApp
+        working-directory: whatsapp
+        run: npm ci --no-audit --no-fund
+
+      - name: Gerar código de pareamento (você tem 5 minutos)
+        env:
+          WA_SESSION_KEY: ${{ secrets.WA_SESSION_KEY }}
+          WHATSAPP_OWNER: ${{ secrets.WHATSAPP_OWNER }}
+          WHATSAPP_BOT_NUMBER: ${{ inputs.numero }}
+        run: |
+          if [ -z "$WA_SESSION_KEY" ]; then
+            echo "❌ Crie o secret WA_SESSION_KEY antes de parear."
+            exit 1
+          fi
+          node whatsapp/run.js pair
+          tar cz -C whatsapp/auth . | openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt \
+            -pass env:WA_SESSION_KEY -out wa-session.enc
+
+      - name: Guardar sessão do WhatsApp
+        uses: actions/cache/save@v4
+        with:
+          path: wa-session.enc
+          key: wa-sessao-${{ github.run_id }}-${{ github.run_attempt }}

@@ -2,11 +2,17 @@ name: Verificar Moodle
 
 on:
   schedule:
-    - cron: "0 */6 * * *"
+    # A cada 30 minutos: atualiza prazos e faltas e responde o WhatsApp.
+    - cron: "*/30 * * * *"
   workflow_dispatch:
 
 permissions:
   contents: write
+
+# Só uma execução por vez usa a sessão do WhatsApp.
+concurrency:
+  group: whatsapp-sessao
+  cancel-in-progress: false
 
 jobs:
   verificar:
@@ -55,3 +61,57 @@ jobs:
             git commit -m "Atualizar histórico do Moodle e faltas"
             git push
           fi
+
+      # ---------------- WhatsApp ----------------
+
+      - name: Configurar Node
+        if: ${{ !cancelled() }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: whatsapp/package-lock.json
+
+      - name: Instalar bot do WhatsApp
+        if: ${{ !cancelled() }}
+        working-directory: whatsapp
+        run: npm ci --no-audit --no-fund
+
+      - name: Restaurar sessão do WhatsApp
+        if: ${{ !cancelled() }}
+        uses: actions/cache/restore@v4
+        with:
+          path: wa-session.enc
+          key: wa-sessao-${{ github.run_id }}
+          restore-keys: wa-sessao-
+
+      - name: Avisos e conversa no WhatsApp
+        id: whatsapp
+        if: ${{ !cancelled() }}
+        env:
+          WA_SESSION_KEY: ${{ secrets.WA_SESSION_KEY }}
+          WHATSAPP_OWNER: ${{ secrets.WHATSAPP_OWNER }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: |
+          if [ -z "$WA_SESSION_KEY" ] || [ ! -f wa-session.enc ]; then
+            echo "WhatsApp ainda não configurado/pareado. Pulando."
+            exit 0
+          fi
+          openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass env:WA_SESSION_KEY \
+            -in wa-session.enc | tar xz -C whatsapp/auth
+          set +e
+          node whatsapp/run.js
+          status=$?
+          set -e
+          # Guarda a sessão mesmo se algo falhou, para não perder o pareamento.
+          tar cz -C whatsapp/auth . | openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt \
+            -pass env:WA_SESSION_KEY -out wa-session.enc
+          echo "salvar=1" >> "$GITHUB_OUTPUT"
+          exit $status
+
+      - name: Guardar sessão do WhatsApp
+        if: ${{ !cancelled() && steps.whatsapp.outputs.salvar == '1' }}
+        uses: actions/cache/save@v4
+        with:
+          path: wa-session.enc
+          key: wa-sessao-${{ github.run_id }}-${{ github.run_attempt }}

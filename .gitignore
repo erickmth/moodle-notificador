@@ -1,0 +1,6 @@
+novidades.json
+__pycache__/
+whatsapp/node_modules/
+whatsapp/auth/*
+!whatsapp/auth/.txt
+wa-session.enc
