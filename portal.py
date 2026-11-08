@@ -115,10 +115,26 @@ class PortalClient:
         if isinstance(dados, dict):
             chave = dados.get("value") or self._data(dados)
 
-        # O portal abre "#/main?key=<chave>" depois do login.
-        # Visitar a página com a chave garante que a sessão fique ativa.
-        if isinstance(chave, str) and chave:
-            self.session.get(self.APP_PAGE, params={"key": chave}, timeout=30)
+        if not isinstance(chave, str) or not chave:
+            raise PortalError("Login não retornou a chave de acesso.")
+
+        # O portal abre "#/main?key=<chave>" e troca essa chave pela
+        # sessão chamando user/AutoLoginPortal.
+        r = self.session.get(
+            self.BASE_URL + "/FrameHTML/RM/API/user/AutoLoginPortal",
+            params={"key": chave},
+            timeout=30,
+        )
+        print(f"Ativação da sessão: HTTP {r.status_code}")
+        dados = self._json(r, "AutoLoginPortal")
+        if isinstance(dados, dict) and dados.get("Excessao"):
+            raise PortalError(f"AutoLoginPortal recusado: {dados.get('Excessao')}")
+
+        try:
+            logado = self._get("UsuarioLogado")
+            print(f"Usuário logado: {bool(isinstance(logado, dict) and logado.get('value'))}")
+        except Exception as erro:
+            print(f"(não foi possível confirmar UsuarioLogado: {erro})")
 
         print("Portal autenticado.")
 
@@ -131,7 +147,14 @@ class PortalClient:
             dados = [dados]
         if not isinstance(dados, list):
             raise PortalError("ContextoComFoto retornou um formato inesperado.")
-        return dados
+        validos = [c for c in dados if isinstance(c, dict) and c.get("IDPERLET")]
+        if not validos:
+            amostra = dados[0] if dados else {}
+            chaves = list(amostra.keys())[:10] if isinstance(amostra, dict) else amostra
+            raise PortalError(
+                f"Nenhum período encontrado em ContextoComFoto (amostra: {chaves})."
+            )
+        return validos
 
     def selecionar_contexto(self, ctx):
         corpo = {
