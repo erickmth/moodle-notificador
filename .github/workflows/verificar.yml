@@ -5,6 +5,11 @@ on:
     # A cada 30 minutos: atualiza prazos e faltas e responde o WhatsApp.
     - cron: "*/30 * * * *"
   workflow_dispatch:
+    inputs:
+      teste:
+        description: "Mandar uma mensagem de teste no WhatsApp"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -92,6 +97,7 @@ jobs:
           WA_SESSION_KEY: ${{ secrets.WA_SESSION_KEY }}
           WHATSAPP_OWNER: ${{ secrets.WHATSAPP_OWNER }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          WA_TESTE: ${{ inputs.teste && '1' || '' }}
         run: |
           if [ -z "$WA_SESSION_KEY" ] || [ ! -f wa-session.enc ]; then
             echo "WhatsApp ainda não configurado/pareado. Pulando."

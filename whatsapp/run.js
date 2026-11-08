@@ -131,7 +131,39 @@ async function conectar({ aoAbrir, aoMensagem }) {
 function ehDoDono(chave) {
     if (!DONO) return false;
     const candidatos = [chave.remoteJid, chave.remoteJidAlt, chave.senderPn, chave.participant, chave.participantAlt];
-    return candidatos.some(j => typeof j === "string" && j.split("@")[0].split(":")[0] === DONO);
+    const alvos = new Set([DONO, ...jidsDono.map(j => j.split("@")[0].split(":")[0])]);
+    return candidatos.some(j => typeof j === "string" && alvos.has(j.split("@")[0].split(":")[0]));
+}
+
+/*
+ * Descobre o endereço real do dono no WhatsApp. Muitos números do Brasil
+ * estão registrados sem o 9 extra (ex.: 55 41 9xxxx-xxxx vira 55 41 xxxx-xxxx),
+ * e mensagem enviada para o formato errado não chega.
+ */
+let jidsDono = [];
+async function resolverDono(sock) {
+    const candidatos = [DONO];
+    const m = DONO.match(/^55(\d{2})9(\d{8})$/);
+    if (m) candidatos.push(`55${m[1]}${m[2]}`);
+    const m2 = DONO.match(/^55(\d{2})(\d{8})$/);
+    if (m2) candidatos.push(`55${m2[1]}9${m2[2]}`);
+
+    for (const numero of candidatos) {
+        try {
+            const [r] = await sock.onWhatsApp(numero);
+            if (r?.exists) {
+                jidsDono = [r.jid, ...(r.lid ? [r.lid] : [])];
+                const variante = numero === DONO ? "como cadastrado" : "variante com/sem o 9";
+                console.log(`Número do dono encontrado no WhatsApp (${variante}).`);
+                return r.jid;
+            }
+        } catch (erro) {
+            console.log(`Não consegui consultar o número (${erro.message}).`);
+        }
+    }
+    console.log(`⚠️ Número do dono não encontrado no WhatsApp (${DONO.length} dígitos; ` +
+        `${DONO.startsWith("55") ? "começa com 55" : "SEM o 55 no início"}). Confira o secret WHATSAPP_OWNER.`);
+    return `${DONO}@s.whatsapp.net`;
 }
 
 function textoDaMensagem(msg) {
@@ -172,7 +204,8 @@ async function parear() {
         aoAbrir: async sock => {
             clearTimeout(limite);
             if (DONO) {
-                await sock.sendMessage(`${DONO}@s.whatsapp.net`, {
+                await esperar(5000); // deixa a sessão nova terminar de sincronizar
+                await sock.sendMessage(await resolverDono(sock), {
                     text: "👋 Oi! Sou seu assistente de prazos e faltas. A partir de agora te aviso aqui quando aparecer atividade ou falta nova, e você pode me perguntar o que quiser sobre isso."
                 });
             }
@@ -212,7 +245,12 @@ async function executar() {
     await conectar({
         aoMensagem,
         aoAbrir: async sock => {
-            const destino = `${DONO}@s.whatsapp.net`;
+            const destino = await resolverDono(sock);
+
+            if (process.env.WA_TESTE === "1") {
+                await sock.sendMessage(destino, { text: "✅ Teste do bot: se você está lendo isto, os avisos estão chegando! Pode me mandar uma pergunta sobre prazos ou faltas." });
+                console.log("📨 Mensagem de teste enviada.");
+            }
 
             // 1. Avisos de atividades e faltas novas
             let novidades = {};
