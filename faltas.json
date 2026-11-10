@@ -1,5 +1,5 @@
 {
-  "atualizado_em": "2026-11-09T17:57:33-03:00",
+  "atualizado_em": "2026-11-10T00:21:29-03:00",
   "periodo_atual": "2026/2",
   "periodos": {
     "2027/1": {
@@ -148,7 +148,7 @@
             },
             {
               "etapa": "Mês 5",
-              "faltas": null
+              "faltas": 0.0
             },
             {
               "etapa": "Mês 6",
