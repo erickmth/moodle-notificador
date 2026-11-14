@@ -1,5 +1,5 @@
 {
-  "atualizado_em": "2026-11-13T18:13:18-03:00",
+  "atualizado_em": "2026-11-13T22:36:09-03:00",
   "periodo_atual": "2026/2",
   "periodos": {
     "2027/1": {
@@ -161,8 +161,8 @@
           "codigo": "GRB.080.06214",
           "disciplina": "Química dos Materiais",
           "situacao": "Matriculado",
-          "total": 4,
-          "percentual": 5.0,
+          "total": 8,
+          "percentual": 10.0,
           "situacao_faltas": 4,
           "etapas": [
             {
@@ -183,7 +183,7 @@
             },
             {
               "etapa": "Mês 5",
-              "faltas": 4.0
+              "faltas": 8.0
             },
             {
               "etapa": "Mês 6",
