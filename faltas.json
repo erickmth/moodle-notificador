@@ -1,5 +1,5 @@
 {
-  "atualizado_em": "2026-11-15T11:39:08-03:00",
+  "atualizado_em": "2026-11-15T17:10:39-03:00",
   "periodo_atual": "2026/2",
   "periodos": {
     "2027/1": {
@@ -9,7 +9,7 @@
         {
           "codigo": "GRB.080.06215",
           "disciplina": "Análise de Circuitos Elétricos Teórica e Experimental",
-          "situacao": "Pré-Matricula",
+          "situacao": "Pré-Matrícula ONLINE",
           "total": 0,
           "percentual": 0.0,
           "situacao_faltas": 4,
@@ -19,7 +19,7 @@
         {
           "codigo": "GRB.080.06216",
           "disciplina": "Cálculo Integral e Diferencial",
-          "situacao": "Pré-Matricula",
+          "situacao": "Pré-Matrícula ONLINE",
           "total": 0,
           "percentual": 0.0,
           "situacao_faltas": 4,
@@ -29,7 +29,7 @@
         {
           "codigo": "GRB.080.06217",
           "disciplina": "Física Geral e Experimental",
-          "situacao": "Pré-Matricula",
+          "situacao": "Pré-Matrícula ONLINE",
           "total": 0,
           "percentual": 0.0,
           "situacao_faltas": 4,
@@ -39,7 +39,7 @@
         {
           "codigo": "GRB.080.06218",
           "disciplina": "Jornada de Aprendizagem – Gestão e Viabilidade de Projetos",
-          "situacao": "Pré-Matricula",
+          "situacao": "Pré-Matrícula ONLINE",
           "total": 0,
           "percentual": 0.0,
           "situacao_faltas": 4,
