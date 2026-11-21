@@ -287,7 +287,7 @@
         }
         .periodo-select:focus { outline: none; border-color: var(--blue-700); box-shadow: 0 0 0 3px rgba(0, 80, 158, .25); }
 
-        .faltas-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+        .faltas-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr)); gap: 12px; }
         .falta-card {
             background: var(--card); border: 1px solid var(--border);
             border-left: 4px solid var(--success); border-radius: var(--radius);
@@ -320,10 +320,12 @@
             width: min(560px, calc(100vw - 32px)); max-height: min(80vh, 720px);
             padding: 0; border: 0; border-radius: var(--radius);
             box-shadow: 0 20px 50px rgba(0, 31, 64, .3); color: var(--text);
+            overflow: hidden;
         }
+        .falta-dialog[open] { display: flex; flex-direction: column; }
         .falta-dialog::backdrop { background: rgba(0, 31, 64, .55); }
         .fd-head {
-            position: sticky; top: 0; background: var(--card); z-index: 1;
+            flex-shrink: 0; background: var(--card);
             display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;
             padding: 18px 20px; border-bottom: 1px solid var(--border);
         }
@@ -333,15 +335,21 @@
             flex-shrink: 0; width: 36px; height: 36px; border: 1px solid var(--border);
             border-radius: var(--radius); background: #fff; font-size: 20px; line-height: 1; cursor: pointer; color: var(--muted);
         }
-        .fd-corpo { padding: 12px 20px 20px; }
+        .fd-corpo { padding: 2px 20px 20px; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+        .fd-dica { margin: 12px 0 0; font-size: 13px; color: var(--muted); }
         .fd-dia { border: 1px solid var(--border); border-radius: var(--radius); margin-top: 10px; }
         .fd-dia > summary {
-            list-style: none; cursor: pointer; padding: 12px 14px;
+            list-style: none; cursor: pointer; padding: 12px 14px; min-height: 48px;
+            -webkit-tap-highlight-color: transparent;
             display: flex; justify-content: space-between; align-items: center; gap: 12px;
         }
         .fd-dia > summary::-webkit-details-marker { display: none; }
         .fd-dia > summary::after { content: "▾"; color: var(--muted); transition: transform .15s; }
         .fd-dia[open] > summary::after { transform: rotate(180deg); }
+        .fd-dia > summary:hover { background: var(--bg); }
+        .fd-dia[open] { border-color: var(--blue-700); }
+        .fd-dia[open] > summary { border-bottom: 1px solid var(--border); margin-bottom: 10px; }
+        .fd-dia[open] > summary:hover { background: transparent; }
         .fd-data { font-weight: 700; color: var(--blue-900); }
         .fd-semana { font-size: 13px; color: var(--muted); font-weight: 400; margin-left: 6px; }
         .fd-qtd {
@@ -355,6 +363,7 @@
         .fd-aula dt { color: var(--muted); }
         .fd-aula dd { margin: 0; overflow-wrap: anywhere; }
         .fd-justificada { color: var(--success); }
+        body.sem-rolagem { overflow: hidden; }
 
         /* 7. FOOTER */
         .site-footer { background: var(--blue-950); color: #cfd9e6; font-size: 14px; }
@@ -390,10 +399,41 @@
             .event-link { width: 100%; }
             .footer-main { gap: var(--space-3); }
             .footer-legal { flex-direction: column; }
+
+            .faltas-head { align-items: stretch; }
+            .periodo-wrap, .periodo-select { width: 100%; }
+            .falta-card { padding: 16px; gap: 10px; }
+            .falta-num { font-size: 1.5rem; }
+            .falta-info { font-size: 13px; }
+            .falta-ver { width: 100%; }
+
+            /* Janela vira uma folha que sobe de baixo */
+            .falta-dialog {
+                width: 100%; max-width: 100%; max-height: 88vh; max-height: 88dvh;
+                margin: auto 0 0; border-radius: 14px 14px 0 0;
+                padding-bottom: env(safe-area-inset-bottom);
+            }
+            .falta-dialog[open] { animation: fd-subir .22s ease-out; }
+            .fd-head { padding: 22px 16px 14px; position: relative; }
+            .fd-head::before {
+                content: ""; position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
+                width: 40px; height: 4px; border-radius: 999px; background: var(--border);
+            }
+            .fd-corpo { padding: 2px 16px 16px; }
+            .fd-dia > summary { padding: 12px; }
+            .fd-semana { display: block; margin-left: 0; font-size: 12px; }
+            .fd-aulas { padding: 0 12px 12px; }
         }
+        @media (max-width: 360px) {
+            .brand img { height: 28px; }
+            .nav { gap: 0; }
+            .nav a { padding-left: 10px; padding-right: 10px; }
+        }
+        @keyframes fd-subir { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
         @media (prefers-reduced-motion: reduce) {
             * { transition: none !important; scroll-behavior: auto !important; }
             .assistant-msg.typing::after { animation: none; }
+            .falta-dialog[open] { animation: none; }
         }
     </style>
 </head>
@@ -1125,7 +1165,9 @@
             ["Subturma", a.subturma],
             ["Justificativa", a.justificativa],
         ].filter(([, v]) => v);
-        const justificada = /justific|abon/i.test(`${a.situacao || ""} ${a.justificativa || ""}`);
+        const situacao = (a.situacao || "").toLowerCase();
+        const justificada = Boolean(a.justificativa)
+            || (/justific|abon/.test(situacao) && !/n[ãa]o/.test(situacao));
 
         return `
             <li class="fd-aula">
@@ -1164,11 +1206,11 @@
             document.getElementById("fdSub").textContent =
                 `${aulas.length} aula${aulas.length === 1 ? "" : "s"} com falta em ${dias.size} dia${dias.size === 1 ? "" : "s"}`;
 
-            corpo = [...dias.entries()].map(([data, lista], i) => {
+            corpo = `<p class="fd-dica">Escolha uma data para ver os detalhes.</p>` + [...dias.entries()].map(([data, lista]) => {
                 const f = formatarDataFalta(data);
                 lista.sort((x, y) => (x.inicio || "").localeCompare(y.inicio || ""));
                 return `
-                    <details class="fd-dia"${i === 0 ? " open" : ""}>
+                    <details class="fd-dia" name="fd-dias">
                         <summary>
                             <span class="fd-data">${escaparHTML(f.data)}<span class="fd-semana">${escaparHTML(f.semana)}</span></span>
                             <span class="fd-qtd">${lista.length} falta${lista.length === 1 ? "" : "s"}</span>
@@ -1180,6 +1222,7 @@
 
         document.getElementById("fdCorpo").innerHTML = corpo;
         dialog.showModal();
+        document.body.classList.add("sem-rolagem");
         document.getElementById("fdCorpo").scrollTop = 0;
     }
 
@@ -1194,6 +1237,15 @@
         evento.preventDefault();
         abrirDetalheFaltas(Number(card.dataset.falta));
     });
+    document.getElementById("faltaDialog").addEventListener("close", () => {
+        document.body.classList.remove("sem-rolagem");
+    });
+    /* Navegadores sem accordion nativo (atributo name): mantém só um dia aberto. */
+    document.getElementById("fdCorpo").addEventListener("toggle", evento => {
+        const atual = evento.target;
+        if (!atual.open) return;
+        document.querySelectorAll("#fdCorpo .fd-dia[open]").forEach(d => { if (d !== atual) d.open = false; });
+    }, true);
     document.getElementById("faltaDialog").addEventListener("click", evento => {
         /* Fecha ao clicar fora da caixa. */
         if (evento.target === evento.currentTarget) evento.currentTarget.close();
