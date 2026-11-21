@@ -6,9 +6,11 @@ Fluxo usado pelo próprio portal:
   2. GET   TOTVSEducacional/Contexto/ContextoComFoto   (um contexto por período)
   3. POST  TOTVSEducacional/Contexto/Selecao     (seleciona o período)
   4. GET   TOTVSEducacional/FaltaEtapa           (faltas do período selecionado)
+  5. GET   TOTVSEducacional/Aluno/Falta/Aula     (data/horário de cada falta)
 """
 
 import re
+from datetime import datetime
 
 import requests
 
@@ -237,6 +239,102 @@ class PortalClient:
         disciplinas.sort(key=lambda d: d["disciplina"].lower())
         return disciplinas
 
+    # ------------------------------------------------------------------
+    # Faltas por aula (datas)
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _data_iso(valor):
+        """'2026-04-15T00:00:00' ou '15/04/2026' -> '2026-04-15'."""
+        texto = str(valor or "").strip()
+        m = re.match(r"^(\d{4})-(\d{2})-(\d{2})", texto)
+        if m:
+            return f"{m.group(1)}-{m.group(2)}-{m.group(3)}"
+        m = re.match(r"^(\d{2})/(\d{2})/(\d{4})", texto)
+        if m:
+            return f"{m.group(3)}-{m.group(2)}-{m.group(1)}"
+        return None
+
+    @staticmethod
+    def _hora(valor):
+        """'19:00', '19:00:00' ou '1899-12-30T19:00:00' -> '19:00'."""
+        m = re.search(r"(\d{1,2}):(\d{2})", str(valor or ""))
+        return f"{int(m.group(1)):02d}:{m.group(2)}" if m else None
+
+    @staticmethod
+    def _texto(valor):
+        texto = str(valor or "").strip()
+        return texto or None
+
+    def get_faltas_por_aula(self, data_de, data_ate):
+        """Lista cada aula com falta do período selecionado (mesma chamada
+        da aba "Faltas por aula" do portal)."""
+        r = self.session.get(
+            self.API + "Aluno/Falta/Aula",
+            params={
+                "tipoFrequencia": "A",  # A = ausência
+                "dataDe": f"{data_de}T00:00:00",
+                "dataAte": f"{data_ate}T23:59:59",
+            },
+            timeout=30,
+        )
+        dados = self._data(self._json(r, "GET Aluno/Falta/Aula"))
+
+        linhas = dados.get("SFREQUENCIAALUNO", []) if isinstance(dados, dict) else dados
+        aulas = []
+        for linha in linhas or []:
+            if not isinstance(linha, dict):
+                continue
+            aulas.append({
+                "data": self._data_iso(linha.get("DATAFALTA")),
+                "inicio": self._hora(linha.get("HORAINICIAL")),
+                "fim": self._hora(linha.get("HORAFINAL")),
+                "aula": self._texto(linha.get("AULA")),
+                "situacao": self._texto(linha.get("SITUACAO")),
+                "subturma": self._texto(linha.get("CODSUBTURMA")),
+                "justificativa": self._texto(linha.get("MOTIVOPERSONALIZADO")),
+                "codigo": self._texto(linha.get("CODDISC")),
+                "disciplina": self._texto(linha.get("DISCIPLINA")),
+            })
+        return aulas
+
+    def _anexar_faltas_por_aula(self, ctx, disciplinas):
+        """Coloca em cada disciplina a lista "faltas_detalhe" com as datas."""
+        hoje = datetime.now().strftime("%Y-%m-%d")
+        inicio = self._data_iso(ctx.get("DTINICIO")) or f"{int(hoje[:4]) - 1}{hoje[4:]}"
+        fim = self._data_iso(ctx.get("DTFIM")) or hoje
+        fim = min(fim, hoje)
+        if inicio > fim:
+            return  # Período ainda não começou.
+
+        try:
+            aulas = self.get_faltas_por_aula(inicio, fim)
+        except Exception as erro:  # Não derruba as faltas por etapa.
+            print(f"   ⚠️ Datas das faltas indisponíveis: {erro}")
+            return
+
+        def normalizar(texto):
+            return re.sub(r"\s+", " ", str(texto or "")).strip().lower()
+
+        por_codigo = {d["codigo"]: d for d in disciplinas if d.get("codigo")}
+        por_nome = {normalizar(d["disciplina"]): d for d in disciplinas}
+        for d in disciplinas:
+            d["faltas_detalhe"] = []
+
+        for aula in aulas:
+            alvo = por_codigo.get(aula.pop("codigo")) or por_nome.get(
+                normalizar(aula.get("disciplina"))
+            )
+            aula.pop("disciplina", None)
+            if alvo is not None:
+                alvo["faltas_detalhe"].append(aula)
+
+        for d in disciplinas:
+            d["faltas_detalhe"].sort(
+                key=lambda a: (a.get("data") or "", a.get("inicio") or ""),
+                reverse=True,
+            )
+        print(f"   {len(aulas)} aula(s) com falta.")
+
     def get_faltas_todos_periodos(self):
         """Retorna {codperlet: {"curso": ..., "disciplinas": [...]}}."""
         resultado = {}
@@ -247,6 +345,8 @@ class PortalClient:
 
             self.selecionar_contexto(ctx)
             disciplinas = self.get_faltas()
+            if any(d.get("total") for d in disciplinas):
+                self._anexar_faltas_por_aula(ctx, disciplinas)
             for d in disciplinas:
                 d["curso"] = curso
 
