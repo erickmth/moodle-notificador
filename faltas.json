@@ -1,5 +1,5 @@
 {
-  "atualizado_em": "2026-11-21T14:53:00-03:00",
+  "atualizado_em": "2026-11-21T17:12:52-03:00",
   "periodo_atual": "2026/2",
   "periodos": {
     "2027/1": {
@@ -85,6 +85,116 @@
               "faltas": null
             }
           ],
+          "faltas_detalhe": [
+            {
+              "data": "2026-11-04",
+              "inicio": "21:25",
+              "fim": "22:10",
+              "aula": "64",
+              "situacao": "Não justificada",
+              "subturma": null,
+              "justificativa": null
+            },
+            {
+              "data": "2026-11-04",
+              "inicio": "20:40",
+              "fim": "21:25",
+              "aula": "63",
+              "situacao": "Não justificada",
+              "subturma": null,
+              "justificativa": null
+            },
+            {
+              "data": "2026-11-04",
+              "inicio": "19:45",
+              "fim": "20:30",
+              "aula": "62",
+              "situacao": "Não justificada",
+              "subturma": null,
+              "justificativa": null
+            },
+            {
+              "data": "2026-11-04",
+              "inicio": "19:00",
+              "fim": "19:45",
+              "aula": "61",
+              "situacao": "Não justificada",
+              "subturma": null,
+              "justificativa": null
+            },
+            {
+              "data": "2026-10-28",
+              "inicio": "21:25",
+              "fim": "22:10",
+              "aula": "60",
+              "situacao": "Não justificada",
+              "subturma": null,
+              "justificativa": null
+            },
+            {
+              "data": "2026-10-28",
+              "inicio": "20:40",
+              "fim": "21:25",
+              "aula": "59",
+              "situacao": "Não justificada",
+              "subturma": null,
+              "justificativa": null
+            },
+            {
+              "data": "2026-10-28",
+              "inicio": "19:45",
+              "fim": "20:30",
+              "aula": "58",
+              "situacao": "Não justificada",
+              "subturma": null,
+              "justificativa": null
+            },
+            {
+              "data": "2026-10-28",
+              "inicio": "19:00",
+              "fim": "19:45",
+              "aula": "57",
+              "situacao": "Não justificada",
+              "subturma": null,
+              "justificativa": null
+            },
+            {
+              "data": "2026-10-07",
+              "inicio": "21:25",
+              "fim": "22:10",
+              "aula": "48",
+              "situacao": "Não justificada",
+              "subturma": null,
+              "justificativa": null
+            },
+            {
+              "data": "2026-10-07",
+              "inicio": "20:40",
+              "fim": "21:25",
+              "aula": "47",
+              "situacao": "Não justificada",
+              "subturma": null,
+              "justificativa": null
+            },
+            {
+              "data": "2026-10-07",
+              "inicio": "19:45",
+              "fim": "20:30",
+              "aula": "46",
+              "situacao": "Não justificada",
+              "subturma": null,
+              "justificativa": null
+            },
+            {
+              "data": "2026-10-07",
+              "inicio": "19:00",
+              "fim": "19:45",
+              "aula": "45",
+              "situacao": "Não justificada",
+              "subturma": null,
+              "justificativa": null
+            }
+          ],
           "curso": "Engenharia Mecatrônica"
         },
         {
@@ -118,6 +228,134 @@
             {
               "etapa": "Mês 6",
               "faltas": null
+            }
+          ],
+          "faltas_detalhe": [
+            {
+              "data": "2026-11-05",
+              "inicio": "21:25",
+              "fim": "22:10",
+              "aula": "64",
+              "situacao": "Não justificada",
+              "subturma": null,
+              "justificativa": null
+            },
+            {
+              "data": "2026-10-29",
+              "inicio": "21:25",
+              "fim": "22:10",
+              "aula": "60",
+              "situacao": "Não justificada",
+              "subturma": null,
+              "justificativa": null
+            },
+            {
+              "data": "2026-10-29",
+              "inicio": "20:40",
+              "fim": "21:25",
+              "aula": "59",
+              "situacao": "Não justificada",
+              "subturma": null,
+              "justificativa": null
+            },
+            {
+              "data": "2026-10-29",
+              "inicio": "19:45",
+              "fim": "20:30",
+              "aula": "58",
+              "situacao": "Não justificada",
+              "subturma": null,
+              "justificativa": null
+            },
+            {
+              "data": "2026-10-29",
+              "inicio": "19:00",
+              "fim": "19:45",
+              "aula": "57",
+              "situacao": "Não justificada",
+              "subturma": null,
+              "justificativa": null
+            },
+            {
+              "data": "2026-10-15",
+              "inicio": "21:25",
+              "fim": "22:10",
+              "aula": "52",
+              "situacao": "Não justificada",
+              "subturma": null,
+              "justificativa": null
+            },
+            {
+              "data": "2026-10-15",
+              "inicio": "20:40",
+              "fim": "21:25",
+              "aula": "51",
+              "situacao": "Não justificada",
+              "subturma": null,
+              "justificativa": null
+            },
+            {
+              "data": "2026-10-15",
+              "inicio": "19:45",
+              "fim": "20:30",
+              "aula": "50",
+              "situacao": "Não justificada",
+              "subturma": null,
+              "justificativa": null
+            },
+            {
+              "data": "2026-10-15",
+              "inicio": "19:00",
+              "fim": "19:45",
+              "aula": "49",
+              "situacao": "Não justificada",
+              "subturma": null,
+              "justificativa": null
+            },
+            {
+              "data": "2026-10-01",
+              "inicio": "21:25",
+              "fim": "22:10",
+              "aula": "44",
+              "situacao": "Não justificada",
+              "subturma": null,
+              "justificativa": null
+            },
+            {
+              "data": "2026-10-01",
+              "inicio": "20:40",
+              "fim": "21:25",
+              "aula": "43",
+              "situacao": "Não justificada",
+              "subturma": null,
+              "justificativa": null
+            },
+            {
+              "data": "2026-10-01",
+              "inicio": "19:45",
+              "fim": "20:30",
+              "aula": "42",
+              "situacao": "Não justificada",
+              "subturma": null,
+              "justificativa": null
+            },
+            {
+              "data": "2026-10-01",
+              "inicio": "19:00",
+              "fim": "19:45",
+              "aula": "41",
+              "situacao": "Não justificada",
+              "subturma": null,
+              "justificativa": null
+            },
+            {
+              "data": "2026-09-03",
+              "inicio": "21:25",
+              "fim": "22:10",
+              "aula": "24",
+              "situacao": "Não justificada",
+              "subturma": null,
+              "justificativa": null
             }
           ],
           "curso": "Engenharia Mecatrônica"
@@ -155,6 +393,116 @@
               "faltas": null
             }
           ],
+          "faltas_detalhe": [
+            {
+              "data": "2026-09-28",
+              "inicio": "21:25",
+              "fim": "22:10",
+              "aula": "44",
+              "situacao": "Não justificada",
+              "subturma": null,
+              "justificativa": null
+            },
+            {
+              "data": "2026-09-28",
+              "inicio": "20:40",
+              "fim": "21:25",
+              "aula": "43",
+              "situacao": "Não justificada",
+              "subturma": null,
+              "justificativa": null
+            },
+            {
+              "data": "2026-09-28",
+              "inicio": "19:45",
+              "fim": "20:30",
+              "aula": "42",
+              "situacao": "Não justificada",
+              "subturma": null,
+              "justificativa": null
+            },
+            {
+              "data": "2026-09-28",
+              "inicio": "19:00",
+              "fim": "19:45",
+              "aula": "41",
+              "situacao": "Não justificada",
+              "subturma": null,
+              "justificativa": null
+            },
+            {
+              "data": "2026-09-14",
+              "inicio": "21:25",
+              "fim": "22:10",
+              "aula": "32",
+              "situacao": "Não justificada",
+              "subturma": null,
+              "justificativa": null
+            },
+            {
+              "data": "2026-09-14",
+              "inicio": "20:40",
+              "fim": "21:25",
+              "aula": "31",
+              "situacao": "Não justificada",
+              "subturma": null,
+              "justificativa": null
+            },
+            {
+              "data": "2026-09-14",
+              "inicio": "19:45",
+              "fim": "20:30",
+              "aula": "30",
+              "situacao": "Não justificada",
+              "subturma": null,
+              "justificativa": null
+            },
+            {
+              "data": "2026-09-14",
+              "inicio": "19:00",
+              "fim": "19:45",
+              "aula": "29",
+              "situacao": "Não justificada",
+              "subturma": null,
+              "justificativa": null
+            },
+            {
+              "data": "2026-08-24",
+              "inicio": "21:25",
+              "fim": "22:10",
+              "aula": "24",
+              "situacao": "Não justificada",
+              "subturma": null,
+              "justificativa": null
+            },
+            {
+              "data": "2026-08-24",
+              "inicio": "20:40",
+              "fim": "21:25",
+              "aula": "23",
+              "situacao": "Não justificada",
+              "subturma": null,
+              "justificativa": null
+            },
+            {
+              "data": "2026-08-24",
+              "inicio": "19:45",
+              "fim": "20:30",
+              "aula": "22",
+              "situacao": "Não justificada",
+              "subturma": null,
+              "justificativa": null
+            },
+            {
+              "data": "2026-08-24",
+              "inicio": "19:00",
+              "fim": "19:45",
+              "aula": "21",
+              "situacao": "Não justificada",
+              "subturma": null,
+              "justificativa": null
+            }
+          ],
           "curso": "Engenharia Mecatrônica"
         },
         {
@@ -188,6 +536,80 @@
             {
               "etapa": "Mês 6",
               "faltas": null
+            }
+          ],
+          "faltas_detalhe": [
+            {
+              "data": "2026-11-13",
+              "inicio": "21:25",
+              "fim": "22:10",
+              "aula": "68",
+              "situacao": "Não justificada",
+              "subturma": null,
+              "justificativa": null
+            },
+            {
+              "data": "2026-11-13",
+              "inicio": "20:40",
+              "fim": "21:25",
+              "aula": "67",
+              "situacao": "Não justificada",
+              "subturma": null,
+              "justificativa": null
+            },
+            {
+              "data": "2026-11-13",
+              "inicio": "19:45",
+              "fim": "20:30",
+              "aula": "66",
+              "situacao": "Não justificada",
+              "subturma": null,
+              "justificativa": null
+            },
+            {
+              "data": "2026-11-13",
+              "inicio": "19:00",
+              "fim": "19:45",
+              "aula": "65",
+              "situacao": "Não justificada",
+              "subturma": null,
+              "justificativa": null
+            },
+            {
+              "data": "2026-11-06",
+              "inicio": "21:25",
+              "fim": "22:10",
+              "aula": "64",
+              "situacao": "Não justificada",
+              "subturma": null,
+              "justificativa": null
+            },
+            {
+              "data": "2026-11-06",
+              "inicio": "20:40",
+              "fim": "21:25",
+              "aula": "63",
+              "situacao": "Não justificada",
+              "subturma": null,
+              "justificativa": null
+            },
+            {
+              "data": "2026-11-06",
+              "inicio": "19:45",
+              "fim": "20:30",
+              "aula": "62",
+              "situacao": "Não justificada",
+              "subturma": null,
+              "justificativa": null
+            },
+            {
+              "data": "2026-11-06",
+              "inicio": "19:00",
+              "fim": "19:45",
+              "aula": "61",
+              "situacao": "Não justificada",
+              "subturma": null,
+              "justificativa": null
             }
           ],
           "curso": "Engenharia Mecatrônica"
